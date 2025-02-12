@@ -1,10 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-}
+import React, { createContext, useContext, useEffect } from 'react';
+import useAuthStore from '../store/authStore';
+import type { User } from '../store/types';
 
 interface AuthContextType {
   user: User | null;
@@ -27,19 +23,16 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);  // Start with loading true
-  const [initialLoading, setInitialLoading] = useState(true);
+  const store = useAuthStore();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-      console.log('AuthContext: Initial auth check');
-      await new Promise(resolve => setTimeout(resolve, 500));  // Reduced timeout
-      setUser(null);
+        console.log('AuthContext: Initial auth check');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        store.setUser(null);
       } finally {
-        setLoading(false);  // Set loading to false after initial check
-        setInitialLoading(false);
+        store.setLoading(false);
       }
     };
 
@@ -47,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithGoogle = async () => {
-    setLoading(true);
+    store.setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       const mockUser = {
@@ -55,33 +48,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: 'user@example.com',
         name: 'Test User'
       };
-      setUser(mockUser);
+      store.setUser(mockUser);
     } catch (error) {
       console.error('Google login error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      store.setLoading(false);
     }
   };
 
   const loginWithOtp = async (emailOrPhone: string) => {
     console.log('AuthContext: Starting loginWithOtp for:', emailOrPhone);
     try {
-      // Don't set loading during OTP send to prevent re-renders
       console.log('AuthContext: Simulating API delay...');
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('AuthContext: OTP sent successfully');
+      store.setOtpFlowState(emailOrPhone, true);
       return true;
     } catch (error) {
       console.log('AuthContext: Error in loginWithOtp:', error);
       console.error('OTP send error:', error);
+      store.clearOtpFlow();
       throw error;
     }
   };
 
   const verifyOtp = async (otp: string) => {
     console.log('AuthContext: Starting verifyOtp with otp:', otp);
-    setLoading(true);
+    store.setLoading(true);
     try {
       console.log('AuthContext: Simulating verification delay...');
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -89,10 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('AuthContext: OTP verified successfully');
         const mockUser = {
           id: '1',
-          email: 'user@example.com',
+          email: store.otpFlow.email,
           name: 'Test User'
         };
-        setUser(mockUser);
+        store.setUser(mockUser);
       } else {
         console.log('AuthContext: Invalid OTP provided');
         throw new Error('Invalid OTP');
@@ -103,33 +97,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     } finally {
       console.log('AuthContext: Setting loading to false');
-      setLoading(false);
+      store.setLoading(false);
     }
   };
 
   const logout = async () => {
-    setLoading(true);
+    store.setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
-      setUser(null);
+      store.logout();
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      store.setLoading(false);
     }
   };
-
-  if (initialLoading) {
-    return null;
-  }
 
   return (
     <AuthContext.Provider
       value={{
-        user,
-        loading,
-        isAuthenticated: !!user,
+        user: store.user,
+        loading: store.loading,
+        isAuthenticated: store.isAuthenticated,
         loginWithGoogle,
         loginWithOtp,
         verifyOtp,

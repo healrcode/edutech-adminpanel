@@ -20,8 +20,24 @@ const Login: React.FC = () => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showResendButton, setShowResendButton] = useState(false);
 
   const { loginWithGoogle, loginWithOtp, verifyOtp, loading } = useAuth();
+
+  // Show resend button after 30 seconds
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showOtpInput) {
+      timer = setTimeout(() => {
+        setShowResendButton(true);
+      }, 30000);
+    } else {
+      setShowResendButton(false);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showOtpInput]);
   const navigate = useNavigate();
 
   // Preserve showOtpInput state across re-renders
@@ -73,16 +89,18 @@ const Login: React.FC = () => {
     }
   }, [emailOrPhone, loginWithOtp]);
 
-  // Clean up OTP state only on component unmount
+  // Handle cleanup carefully during OTP flow
   useEffect(() => {
-    // This runs only when component is unmounted
+    const otpInProgress = loading || showOtpInput;
     return () => {
-      if (window.location.pathname !== '/dashboard') {
-        console.log('Login: Component unmounting - cleaning up OTP state');
+      if (!otpInProgress) {
+        console.log('Login: Safe to clean up - no OTP in progress');
         localStorage.removeItem('showOtpInput');
+      } else {
+        console.log('Login: Skipping cleanup - OTP in progress');
       }
     };
-  }, []);
+  }, [loading, showOtpInput]);
 
   const handleVerifyOtp = async () => {
     if (!otp) return;
@@ -93,8 +111,13 @@ const Login: React.FC = () => {
       // Let the cleanup run after navigation
       navigate('/dashboard');
     } catch (err) {
+      // Just clear the OTP field on error, keep the OTP input visible
+      setOtp('');
       setError('Invalid OTP. Please try again. (Hint: Use 123456)');
       console.error(err);
+      // Force ensure OTP input stays visible
+      setShowOtpInput(true);
+      localStorage.setItem('showOtpInput', 'true');
     }
   };
 
@@ -141,13 +164,25 @@ const Login: React.FC = () => {
 
               {showOtpInput ? (
                 <>
-                  <TextField
-                    fullWidth
-                    label="Enter OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    disabled={loading}
-                  />
+              <TextField
+                fullWidth
+                label="Enter OTP"
+                value={otp}
+                onChange={(e) => {
+                  // Only allow numbers and limit to 6 digits
+                  const newValue = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setOtp(newValue);
+                }}
+                disabled={loading}
+                placeholder="Enter the 6-digit OTP code"
+                autoFocus
+                helperText={`Enter the 6-digit OTP sent to ${emailOrPhone}`}
+                inputProps={{
+                  maxLength: 6,
+                  inputMode: 'numeric',
+                  pattern: '[0-9]*'
+                }}
+              />
                   <Button
                     fullWidth
                     variant="contained"
@@ -156,19 +191,36 @@ const Login: React.FC = () => {
                   >
                     {loading ? <CircularProgress size={24} /> : 'Verify OTP'}
                   </Button>
-                  <Button
-                    fullWidth
-                    onClick={() => {
-                      console.log('Login: Going back to email/phone input');
-                      setShowOtpInput(false);
-                      localStorage.removeItem('showOtpInput');
-                      setOtp('');
-                      setError(null);
-                    }}
-                    disabled={loading}
-                  >
-                    Back to Email/Phone
-                  </Button>
+                  <Stack direction="row" spacing={2}>
+                    <Button
+                      fullWidth
+                      onClick={() => {
+                        console.log('Login: Going back to email/phone input');
+                        setOtp('');
+                        setError(null);
+                        // Delay state cleanup to prevent unmount issues
+                        setTimeout(() => {
+                          setShowOtpInput(false);
+                          localStorage.removeItem('showOtpInput');
+                        }, 0);
+                      }}
+                      disabled={loading}
+                    >
+                      Back to Email/Phone
+                    </Button>
+                    {showResendButton && (
+                      <Button
+                        fullWidth
+                        onClick={() => {
+                          setShowResendButton(false);
+                          handleSendOtp();
+                        }}
+                        disabled={loading}
+                      >
+                        Resend OTP
+                      </Button>
+                    )}
+                  </Stack>
                 </>
               ) : (
                 <Button

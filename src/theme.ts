@@ -1,19 +1,8 @@
 import { createTheme } from '@mui/material/styles';
-import { ThemeOptions } from '@mui/material/styles';
+import type { ThemeOptions } from '@mui/material/styles';
+import '@mui/material/styles';
 
-declare module '@mui/material/styles' {
-  interface Palette {
-    neutral?: Palette['primary'];
-  }
-  interface PaletteOptions {
-    neutral?: PaletteOptions['primary'];
-  }
-  interface PaletteColor {
-    lighter?: string;
-  }
-}
-
-const theme = createTheme({
+const themeOptions: ThemeOptions = {
   palette: {
     primary: {
       main: '#1B4965',
@@ -35,7 +24,19 @@ const theme = createTheme({
       primary: '#1E293B',
       secondary: '#64748B'
     },
-    divider: '#E2E8F0'
+    divider: '#E2E8F0',
+    success: {
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
+      contrastText: '#FFFFFF'
+    },
+    warning: {
+      main: '#F59E0B',
+      light: '#FBBF24',
+      dark: '#D97706',
+      contrastText: '#FFFFFF'
+    }
   },
   typography: {
     fontFamily: '"Outfit", sans-serif',
@@ -83,12 +84,28 @@ const theme = createTheme({
         root: {
           borderRadius: 8,
           padding: '8px 16px',
-          fontWeight: 500
+          fontWeight: 500,
+          '&.Mui-disabled': {
+            backgroundColor: '#E2E8F0',
+            color: '#94A3B8'
+          }
         },
         contained: {
           boxShadow: 'none',
           '&:hover': {
             boxShadow: 'none'
+          }
+        },
+        containedPrimary: {
+          '&:hover': {
+            backgroundColor: '#133449'
+          }
+        },
+        outlined: {
+          borderColor: '#E2E8F0',
+          '&:hover': {
+            backgroundColor: '#F8FAFC',
+            borderColor: '#1B4965'
           }
         }
       }
@@ -117,7 +134,15 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 8
+            borderRadius: 8,
+            backgroundColor: '#FFFFFF',
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#1B4965',
+              borderWidth: 2
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#1B4965'
+            }
           }
         }
       }
@@ -129,11 +154,25 @@ const theme = createTheme({
         }
       }
     },
-    MuiAvatar: {
+    MuiAlert: {
       styleOverrides: {
         root: {
-          backgroundColor: '#1B4965',
-          color: '#FFFFFF'
+          borderRadius: 8
+        },
+        standardSuccess: {
+          backgroundColor: '#EDF7EF',
+          color: '#4A8A5E'
+        },
+        standardError: {
+          backgroundColor: '#FEF2F2',
+          color: '#DC2626'
+        }
+      }
+    },
+    MuiCircularProgress: {
+      styleOverrides: {
+        root: {
+          strokeLinecap: 'round'
         }
       }
     }
@@ -141,6 +180,8 @@ const theme = createTheme({
   shape: {
     borderRadius: 8
   }
-} as ThemeOptions);
+};
+
+const theme = createTheme(themeOptions);
 
 export default theme;

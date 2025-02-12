@@ -2,12 +2,13 @@ import React from 'react';
 import {
   AppBar,
   Box,
-  IconButton,
   Toolbar,
   Typography,
   Button,
   Avatar,
-  Stack
+  Stack,
+  Container,
+  Tooltip
 } from '@mui/material';
 import { Logout as LogoutIcon } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,7 +19,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -37,6 +38,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       .join('')
       .toUpperCase();
   };
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -64,16 +69,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           
           {user && (
             <Stack direction="row" spacing={2} alignItems="center">
-              <Avatar 
-                sx={{ 
-                  bgcolor: 'primary.main',
-                  width: 32,
-                  height: 32,
-                  fontSize: '0.875rem'
-                }}
-              >
-                {getInitials(user.name || user.email)}
-              </Avatar>
+              <Tooltip title={user.email}>
+                <Avatar 
+                  sx={{ 
+                    bgcolor: 'primary.main',
+                    width: 32,
+                    height: 32,
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  {getInitials(user.name || user.email)}
+                </Avatar>
+              </Tooltip>
               <Button 
                 onClick={handleLogout}
                 startIcon={<LogoutIcon />}

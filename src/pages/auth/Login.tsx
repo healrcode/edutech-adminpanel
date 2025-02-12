@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -9,141 +9,137 @@ import {
   TextField,
   Typography,
   Alert,
-  useTheme
+  CircularProgress,
 } from '@mui/material';
 import { Google as GoogleIcon } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const { loginWithGoogle, loginWithOtp, verifyOtp } = useAuth();
+  const { loginWithGoogle, loginWithOtp, verifyOtp, loading } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
+
+  // Preserve showOtpInput state across re-renders
+  useEffect(() => {
+    const savedShowOtpInput = localStorage.getItem('showOtpInput');
+    console.log('Login: Initial load - saved showOtpInput:', savedShowOtpInput);
+    if (savedShowOtpInput === 'true') {
+      setShowOtpInput(true);
+    }
+  }, []);
+
+  // Store showOtpInput state changes
+  useEffect(() => {
+    console.log('Login: showOtpInput state changed to:', showOtpInput);
+    localStorage.setItem('showOtpInput', showOtpInput.toString());
+  }, [showOtpInput]);
 
   const handleGoogleLogin = async () => {
     try {
       setError(null);
-      setLoading(true);
       await loginWithGoogle();
       navigate('/dashboard');
     } catch (err) {
-      setError('Failed to login with Google');
+      setError('Failed to login with Google. Please try again.');
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleSendOtp = async () => {
+  const handleSendOtp = useCallback(async () => {
+    if (!emailOrPhone) return;
+
     try {
+      console.log('Login: Sending OTP for:', emailOrPhone);
       setError(null);
-      setLoading(true);
-      await loginWithOtp(emailOrPhone);
-      setIsOtpSent(true);
+      const success = await loginWithOtp(emailOrPhone);
+      console.log('Login: OTP send result:', success);
+      
+      if (success) {
+        console.log('Login: Setting showOtpInput to true');
+        setShowOtpInput(true);
+        localStorage.setItem('showOtpInput', 'true');
+        setError('OTP sent successfully! For testing, use: 123456');
+      }
     } catch (err) {
-      setError('Failed to send OTP');
+      console.log('Login: Error sending OTP:', err);
+      setError('Failed to send OTP. Please try again.');
+      setShowOtpInput(false);
       console.error(err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [emailOrPhone, loginWithOtp]);
+
+  // Clean up OTP state only on component unmount
+  useEffect(() => {
+    // This runs only when component is unmounted
+    return () => {
+      if (window.location.pathname !== '/dashboard') {
+        console.log('Login: Component unmounting - cleaning up OTP state');
+        localStorage.removeItem('showOtpInput');
+      }
+    };
+  }, []);
 
   const handleVerifyOtp = async () => {
+    if (!otp) return;
+
     try {
       setError(null);
-      setLoading(true);
       await verifyOtp(otp);
+      // Let the cleanup run after navigation
       navigate('/dashboard');
     } catch (err) {
-      setError('Invalid OTP');
+      setError('Invalid OTP. Please try again. (Hint: Use 123456)');
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <Box 
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        p: 2
-      }}
-    >
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
       <Container maxWidth="xs">
-        <Card 
-          sx={{ 
-            p: 4,
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-          }}
-        >
+        <Card sx={{ p: 4 }}>
           <Stack spacing={3}>
             <Box textAlign="center">
-              <Typography 
-                variant="h4" 
-                gutterBottom
-                sx={{ 
-                  color: 'primary.main',
-                  fontWeight: 600
-                }}
-              >
+              <Typography variant="h4" gutterBottom>
                 Welcome Back
               </Typography>
-              <Typography 
-                variant="body2" 
-                color="text.secondary"
-              >
-                Login to access your account
+              <Typography variant="body2" color="text.secondary">
+                Please sign in to continue
               </Typography>
             </Box>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert severity={error.includes('success') ? 'success' : 'error'}>
                 {error}
               </Alert>
             )}
 
-            {/* Google Login */}
             <Button
               variant="outlined"
               fullWidth
-              startIcon={<GoogleIcon />}
+              startIcon={!loading && <GoogleIcon />}
               onClick={handleGoogleLogin}
-              size="large"
               disabled={loading}
             >
-              Continue with Google
+              {loading ? <CircularProgress size={24} /> : 'Continue with Google'}
             </Button>
 
-            <Divider sx={{ color: 'text.secondary' }}>OR</Divider>
+            <Divider>OR</Divider>
 
-            {/* Email/Phone + OTP Section */}
             <Stack spacing={2}>
               <TextField
                 fullWidth
                 label="Email or Phone"
                 value={emailOrPhone}
                 onChange={(e) => setEmailOrPhone(e.target.value)}
-                disabled={isOtpSent || loading}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '&.Mui-focused fieldset': {
-                      borderColor: 'primary.main'
-                    }
-                  }
-                }}
+                disabled={showOtpInput || loading}
               />
 
-              {isOtpSent ? (
+              {showOtpInput ? (
                 <>
                   <TextField
                     fullWidth
@@ -151,22 +147,27 @@ const Login: React.FC = () => {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     disabled={loading}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        '&.Mui-focused fieldset': {
-                          borderColor: 'primary.main'
-                        }
-                      }
-                    }}
                   />
                   <Button
                     fullWidth
                     variant="contained"
                     onClick={handleVerifyOtp}
-                    size="large"
                     disabled={loading || !otp}
                   >
-                    Verify OTP
+                    {loading ? <CircularProgress size={24} /> : 'Verify OTP'}
+                  </Button>
+                  <Button
+                    fullWidth
+                    onClick={() => {
+                      console.log('Login: Going back to email/phone input');
+                      setShowOtpInput(false);
+                      localStorage.removeItem('showOtpInput');
+                      setOtp('');
+                      setError(null);
+                    }}
+                    disabled={loading}
+                  >
+                    Back to Email/Phone
                   </Button>
                 </>
               ) : (
@@ -174,10 +175,9 @@ const Login: React.FC = () => {
                   fullWidth
                   variant="contained"
                   onClick={handleSendOtp}
-                  size="large"
                   disabled={loading || !emailOrPhone}
                 >
-                  Send OTP
+                  {loading ? <CircularProgress size={24} /> : 'Send OTP'}
                 </Button>
               )}
             </Stack>

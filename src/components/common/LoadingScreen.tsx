@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 
 const LoadingScreen: React.FC = () => {
   return (
@@ -21,6 +21,7 @@ const LoadingScreen: React.FC = () => {
     >
       <CircularProgress 
         size={48}
+        thickness={4}
         sx={{
           color: 'primary.main',
           '& .MuiCircularProgress-circle': {
@@ -30,7 +31,7 @@ const LoadingScreen: React.FC = () => {
       />
       <Box 
         sx={{
-          width: 48,
+          width: 100,
           height: 3,
           borderRadius: 1,
           bgcolor: 'primary.lighter',
@@ -44,19 +45,31 @@ const LoadingScreen: React.FC = () => {
             right: 0,
             bottom: 0,
             backgroundColor: 'primary.main',
-            animation: 'loading 1s infinite',
+            animation: 'loading 1.5s infinite',
             borderRadius: 1,
           },
           '@keyframes loading': {
             '0%': {
               transform: 'translateX(-100%)',
             },
-            '100%': {
+            '50%': {
               transform: 'translateX(100%)',
+            },
+            '100%': {
+              transform: 'translateX(-100%)',
             },
           },
         }}
       />
+      <Typography 
+        variant="body2" 
+        sx={{ 
+          color: 'text.secondary',
+          mt: 1
+        }}
+      >
+        Loading...
+      </Typography>
     </Box>
   );
 };

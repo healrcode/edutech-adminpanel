@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import useAuthStore from '../../store/authStore';
 import {
   Box,
   Button,
@@ -16,18 +17,18 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
-  const [showOtpInput, setShowOtpInput] = useState(false);
-  const [emailOrPhone, setEmailOrPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showResendButton, setShowResendButton] = useState(false);
 
   const { loginWithGoogle, loginWithOtp, verifyOtp, loading } = useAuth();
+  const { otpFlow, setOtpFlowState, clearOtpFlow } = useAuthStore();
+  const navigate = useNavigate();
 
   // Show resend button after 30 seconds
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (showOtpInput) {
+    if (otpFlow.showOtp) {
       timer = setTimeout(() => {
         setShowResendButton(true);
       }, 30000);
@@ -37,23 +38,16 @@ const Login: React.FC = () => {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [showOtpInput]);
-  const navigate = useNavigate();
+  }, [otpFlow.showOtp]);
 
-  // Preserve showOtpInput state across re-renders
+  // Clean up on unmount if not navigating to dashboard
   useEffect(() => {
-    const savedShowOtpInput = localStorage.getItem('showOtpInput');
-    console.log('Login: Initial load - saved showOtpInput:', savedShowOtpInput);
-    if (savedShowOtpInput === 'true') {
-      setShowOtpInput(true);
-    }
-  }, []);
-
-  // Store showOtpInput state changes
-  useEffect(() => {
-    console.log('Login: showOtpInput state changed to:', showOtpInput);
-    localStorage.setItem('showOtpInput', showOtpInput.toString());
-  }, [showOtpInput]);
+    return () => {
+      if (window.location.pathname !== '/dashboard') {
+        clearOtpFlow();
+      }
+    };
+  }, [clearOtpFlow]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -67,40 +61,24 @@ const Login: React.FC = () => {
   };
 
   const handleSendOtp = useCallback(async () => {
-    if (!emailOrPhone) return;
+    if (!otpFlow.email) return;
 
     try {
-      console.log('Login: Sending OTP for:', emailOrPhone);
+      console.log('Login: Sending OTP for:', otpFlow.email);
       setError(null);
-      const success = await loginWithOtp(emailOrPhone);
+      const success = await loginWithOtp(otpFlow.email);
       console.log('Login: OTP send result:', success);
       
       if (success) {
-        console.log('Login: Setting showOtpInput to true');
-        setShowOtpInput(true);
-        localStorage.setItem('showOtpInput', 'true');
         setError('OTP sent successfully! For testing, use: 123456');
       }
     } catch (err) {
       console.log('Login: Error sending OTP:', err);
       setError('Failed to send OTP. Please try again.');
-      setShowOtpInput(false);
+      clearOtpFlow();
       console.error(err);
     }
-  }, [emailOrPhone, loginWithOtp]);
-
-  // Handle cleanup carefully during OTP flow
-  useEffect(() => {
-    const otpInProgress = loading || showOtpInput;
-    return () => {
-      if (!otpInProgress) {
-        console.log('Login: Safe to clean up - no OTP in progress');
-        localStorage.removeItem('showOtpInput');
-      } else {
-        console.log('Login: Skipping cleanup - OTP in progress');
-      }
-    };
-  }, [loading, showOtpInput]);
+  }, [otpFlow.email, loginWithOtp, clearOtpFlow]);
 
   const handleVerifyOtp = async () => {
     if (!otp) return;
@@ -116,8 +94,7 @@ const Login: React.FC = () => {
       setError('Invalid OTP. Please try again. (Hint: Use 123456)');
       console.error(err);
       // Force ensure OTP input stays visible
-      setShowOtpInput(true);
-      localStorage.setItem('showOtpInput', 'true');
+      setOtpFlowState(otpFlow.email, true);
     }
   };
 
@@ -157,12 +134,12 @@ const Login: React.FC = () => {
               <TextField
                 fullWidth
                 label="Email or Phone"
-                value={emailOrPhone}
-                onChange={(e) => setEmailOrPhone(e.target.value)}
-                disabled={showOtpInput || loading}
+                value={otpFlow.email}
+                onChange={(e) => setOtpFlowState(e.target.value, false)}
+                disabled={otpFlow.showOtp || loading}
               />
 
-              {showOtpInput ? (
+              {otpFlow.showOtp ? (
                 <>
               <TextField
                 fullWidth
@@ -176,7 +153,7 @@ const Login: React.FC = () => {
                 disabled={loading}
                 placeholder="Enter the 6-digit OTP code"
                 autoFocus
-                helperText={`Enter the 6-digit OTP sent to ${emailOrPhone}`}
+                helperText={`Enter the 6-digit OTP sent to ${otpFlow.email}`}
                 inputProps={{
                   maxLength: 6,
                   inputMode: 'numeric',
@@ -198,11 +175,7 @@ const Login: React.FC = () => {
                         console.log('Login: Going back to email/phone input');
                         setOtp('');
                         setError(null);
-                        // Delay state cleanup to prevent unmount issues
-                        setTimeout(() => {
-                          setShowOtpInput(false);
-                          localStorage.removeItem('showOtpInput');
-                        }, 0);
+                        clearOtpFlow();
                       }}
                       disabled={loading}
                     >
@@ -227,7 +200,7 @@ const Login: React.FC = () => {
                   fullWidth
                   variant="contained"
                   onClick={handleSendOtp}
-                  disabled={loading || !emailOrPhone}
+                  disabled={loading || !otpFlow.email}
                 >
                   {loading ? <CircularProgress size={24} /> : 'Send OTP'}
                 </Button>

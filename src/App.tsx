@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
+import useAuthStore from './store/authStore';
+import LoadingScreen from './pages/auth/LoadingScreen';
 import theme from './theme';
 
 // Pages
@@ -14,6 +16,27 @@ import PublicRoute from './components/common/PublicRoute';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const store = useAuthStore();
+
+  useEffect(() => {
+    // Allow hydration of persisted state
+    const timer = setTimeout(() => {
+      setIsInitialized(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isInitialized) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <LoadingScreen />
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

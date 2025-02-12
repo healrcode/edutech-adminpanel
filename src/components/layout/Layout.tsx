@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Logout as LogoutIcon } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import useAuthStore from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 
 interface LayoutProps {
@@ -20,11 +21,13 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout, loading } = useAuth();
+  const { clearOtpFlow } = useAuthStore();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
       await logout();
+      clearOtpFlow(); // Clear OTP state on logout
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);

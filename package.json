@@ -8,14 +8,15 @@
     "@fontsource/outfit": "^5.0.8",
     "@mui/icons-material": "^5.15.6",
     "@mui/material": "^5.15.6",
-    "@types/node": "^16.18.75",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
-    "firebase": "^10.7.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.3",
-    "react-scripts": "5.0.1",
+    "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.75",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
     "typescript": "^4.9.5"
   },
   "scripts": {

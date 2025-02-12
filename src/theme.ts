@@ -1,17 +1,30 @@
 import { createTheme } from '@mui/material/styles';
+import { ThemeOptions } from '@mui/material/styles';
+
+declare module '@mui/material/styles' {
+  interface Palette {
+    neutral?: Palette['primary'];
+  }
+  interface PaletteOptions {
+    neutral?: PaletteOptions['primary'];
+  }
+  interface PaletteColor {
+    lighter?: string;
+  }
+}
 
 const theme = createTheme({
   palette: {
     primary: {
       main: '#1B4965',
       light: '#2C6284',
-      lighter: '#E6F4F9', // Added for icon backgrounds
+      lighter: '#E6F4F9',
       dark: '#133449'
     },
     secondary: {
       main: '#5FA777',
       light: '#7AB890',
-      lighter: '#EDF7EF', // Added for consistency
+      lighter: '#EDF7EF',
       dark: '#4A8A5E'
     },
     background: {
@@ -128,6 +141,6 @@ const theme = createTheme({
   shape: {
     borderRadius: 8
   }
-});
+} as ThemeOptions);
 
 export default theme;

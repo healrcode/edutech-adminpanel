@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
+import { authClient } from '../api/auth/client';
 import type { User } from '../store/types';
+import type { ApiError } from '../api/auth/types';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  loginWithGoogle: () => Promise<void>;
-  loginWithOtp: (emailOrPhone: string) => Promise<boolean>;
+  loginWithGoogle: (token: string) => Promise<void>;
+  loginWithOtp: (email: string) => Promise<boolean>;
   verifyOtp: (otp: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -25,78 +27,76 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const store = useAuthStore();
 
+  // Check auth status on mount and token changes
   useEffect(() => {
     const checkAuth = async () => {
       try {
         console.log('AuthContext: Initial auth check');
-        await new Promise(resolve => setTimeout(resolve, 500));
+        store.setLoading(true);
+        const user = await authClient.getCurrentUser();
+        store.setUser(user);
+      } catch (error) {
+        console.error('Auth check error:', error);
         store.setUser(null);
       } finally {
         store.setLoading(false);
       }
     };
 
-    checkAuth();
+    // Only check if we have a token
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      checkAuth();
+    } else {
+      store.setLoading(false);
+    }
   }, []);
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (token: string) => {
     store.setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockUser = {
-        id: '1',
-        email: 'user@example.com',
-        name: 'Test User'
-      };
-      store.setUser(mockUser);
+      const response = await authClient.googleAuth({ token });
+      store.setUser(response.user);
+      store.setTokens(response.tokens.accessToken, response.tokens.refreshToken);
     } catch (error) {
       console.error('Google login error:', error);
-      throw error;
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Failed to login with Google');
     } finally {
       store.setLoading(false);
     }
   };
 
-  const loginWithOtp = async (emailOrPhone: string) => {
-    console.log('AuthContext: Starting loginWithOtp for:', emailOrPhone);
+  const loginWithOtp = async (email: string) => {
+    console.log('AuthContext: Starting loginWithOtp for:', email);
     try {
-      console.log('AuthContext: Simulating API delay...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('AuthContext: OTP sent successfully');
-      store.setOtpFlowState(emailOrPhone, true);
+      await authClient.sendOTP({ email });
+      store.setOtpFlowState(email, true);
       return true;
     } catch (error) {
-      console.log('AuthContext: Error in loginWithOtp:', error);
       console.error('OTP send error:', error);
       store.clearOtpFlow();
-      throw error;
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Failed to send OTP');
     }
   };
 
   const verifyOtp = async (otp: string) => {
-    console.log('AuthContext: Starting verifyOtp with otp:', otp);
     store.setLoading(true);
     try {
-      console.log('AuthContext: Simulating verification delay...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      if (otp === '123456') {
-        console.log('AuthContext: OTP verified successfully');
-        const mockUser = {
-          id: '1',
-          email: store.otpFlow.email,
-          name: 'Test User'
-        };
-        store.setUser(mockUser);
-      } else {
-        console.log('AuthContext: Invalid OTP provided');
-        throw new Error('Invalid OTP');
+      const email = store.otpFlow.email;
+      if (!email) {
+        throw new Error('No email found for OTP verification');
       }
+
+      const response = await authClient.verifyOTP({ email, otp });
+      store.setUser(response.user);
+      store.setTokens(response.tokens.accessToken, response.tokens.refreshToken);
     } catch (error) {
-      console.log('AuthContext: Error in verifyOtp:', error);
       console.error('OTP verification error:', error);
-      throw error;
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Failed to verify OTP');
     } finally {
-      console.log('AuthContext: Setting loading to false');
       store.setLoading(false);
     }
   };
@@ -104,12 +104,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     store.setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      store.logout();
+      await authClient.logout();
     } catch (error) {
       console.error('Logout error:', error);
-      throw error;
     } finally {
+      store.logout();
       store.setLoading(false);
     }
   };

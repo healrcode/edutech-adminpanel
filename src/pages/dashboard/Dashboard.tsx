@@ -63,6 +63,13 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, subtitle, color
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
 
+  const getDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return 'Admin';
+  };
+
   return (
     <Layout>
       <Container maxWidth="lg">
@@ -72,7 +79,7 @@ const Dashboard: React.FC = () => {
               Dashboard
             </Typography>
             <Typography color="text.secondary">
-              Welcome back, {user?.name || 'Admin'}
+              Welcome back, {getDisplayName()}
             </Typography>
           </Box>
 

@@ -12,6 +12,10 @@ const useAuthStore = create<AuthStore>()(
         email: '',
         showOtp: false,
       },
+      tokens: {
+        accessToken: null,
+        refreshToken: null,
+      },
 
       setUser: (user: User | null) =>
         set((state) => ({
@@ -22,6 +26,14 @@ const useAuthStore = create<AuthStore>()(
       setLoading: (loading: boolean) =>
         set(() => ({
           loading,
+        })),
+
+      setTokens: (accessToken: string | null, refreshToken: string | null) =>
+        set((state) => ({
+          tokens: {
+            accessToken,
+            refreshToken,
+          },
         })),
 
       setOtpFlowState: (email: string, showOtp: boolean) =>
@@ -44,6 +56,10 @@ const useAuthStore = create<AuthStore>()(
         set((state) => ({
           user: null,
           isAuthenticated: false,
+          tokens: {
+            accessToken: null,
+            refreshToken: null,
+          },
           otpFlow: {
             email: '',
             showOtp: false,
@@ -58,6 +74,10 @@ const useAuthStore = create<AuthStore>()(
         user: null,
         isAuthenticated: false,
         loading: false,
+        tokens: {
+          accessToken: null,
+          refreshToken: null,
+        },
       }),
     }
   )

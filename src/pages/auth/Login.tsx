@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useAuthStore from '../../store/authStore';
+import { auth } from '../../config/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import {
   Box,
   Button,
@@ -52,7 +54,10 @@ const Login: React.FC = () => {
   const handleGoogleLogin = async () => {
     try {
       setError(null);
-      await loginWithGoogle();
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
+      await loginWithGoogle(token);
       navigate('/dashboard');
     } catch (err) {
       setError('Failed to login with Google. Please try again.');

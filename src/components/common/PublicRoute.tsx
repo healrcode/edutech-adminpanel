@@ -1,28 +1,34 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import useAuthStore from '../../store/authStore';
-import LoadingScreen from '../../pages/auth/LoadingScreen';
 
 interface PublicRouteProps {
   children: React.ReactNode;
+  // Optional flag to redirect authenticated users away from this route (e.g., login page)
+  redirectAuthenticated?: boolean;
+  // Optional path to redirect to (defaults to /dashboard)
+  redirectTo?: string;
 }
 
-const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
-  const { loading } = useAuth();
-  const { isAuthenticated, otpFlow } = useAuthStore();
+const PublicRoute: React.FC<PublicRouteProps> = ({
+  children,
+  redirectAuthenticated = false,
+  redirectTo = '/dashboard'
+}) => {
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
-    return <LoadingScreen />;
+    // You might want to show a loading spinner here
+    return <div>Loading...</div>;
   }
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Get the redirect path from location state or use default
+  const from = (location.state as any)?.from?.pathname || redirectTo;
 
-  // Preserve OTP flow state during navigation
-  if (otpFlow.showOtp && window.location.pathname !== '/login') {
-    return <Navigate to="/login" replace />;
+  if (redirectAuthenticated && isAuthenticated) {
+    // Redirect authenticated users to the page they came from or dashboard
+    return <Navigate to={from} replace />;
   }
 
   return <>{children}</>;

@@ -34,12 +34,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = (text: string) => {
+    return text
       .split(' ')
       .map(part => part[0])
       .join('')
       .toUpperCase();
+  };
+
+  const getDisplayName = (user: { firstName?: string; lastName?: string; email: string }) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user.email;
   };
 
   if (loading) {
@@ -81,7 +88,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     fontSize: '0.875rem'
                   }}
                 >
-                  {getInitials(user.name || user.email)}
+                  {getInitials(getDisplayName(user))}
                 </Avatar>
               </Tooltip>
               <Button 

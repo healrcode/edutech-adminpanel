@@ -1,13 +1,14 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { AuthTokens } from './auth/types';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const BASE_URL = 'http://localhost:8080';
 
 export class ApiClient {
   private client: AxiosInstance;
   private refreshPromise: Promise<AuthTokens> | null = null;
 
   constructor() {
+    console.log('[API] Initializing with base URL:', BASE_URL);
     this.client = axios.create({
       baseURL: BASE_URL,
       headers: {
@@ -26,6 +27,10 @@ export class ApiClient {
         if (accessToken) {
           config.headers['Authorization'] = `Bearer ${accessToken}`;
         }
+        // Log the full URL being requested
+        const baseUrl = config.baseURL || '';
+        const url = config.url || '';
+        console.log('[API] Making request to:', `${baseUrl}${url}`);
         return config;
       },
       (error) => Promise.reject(error)
@@ -82,7 +87,7 @@ export class ApiClient {
       throw new Error('No refresh token available');
     }
 
-    const response = await this.client.post('/auth/refresh-token', {
+    const response = await this.client.post('/api/admin/auth/refresh-token', {
       refreshToken,
     });
 
@@ -91,6 +96,7 @@ export class ApiClient {
 
   private handleError(error: any) {
     if (axios.isAxiosError(error)) {
+      console.error('[API] Error response:', error.response?.data);
       const apiError = error.response?.data?.error || {
         code: 'unknown',
         message: 'An unknown error occurred',
@@ -104,21 +110,25 @@ export class ApiClient {
   }
 
   protected async get<T>(url: string) {
+    console.log('[API] GET request to:', BASE_URL + url);
     const response = await this.client.get<T>(url);
     return response.data;
   }
 
   protected async post<T>(url: string, data?: any) {
+    console.log('[API] POST request to:', BASE_URL + url, 'with data:', data);
     const response = await this.client.post<T>(url, data);
     return response.data;
   }
 
   protected async put<T>(url: string, data?: any) {
+    console.log('[API] PUT request to:', BASE_URL + url, 'with data:', data);
     const response = await this.client.put<T>(url, data);
     return response.data;
   }
 
   protected async delete<T>(url: string) {
+    console.log('[API] DELETE request to:', BASE_URL + url);
     const response = await this.client.delete<T>(url);
     return response.data;
   }

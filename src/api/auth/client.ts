@@ -12,14 +12,14 @@ class AuthClient extends ApiClient {
    * Get current user profile
    */
   async getCurrentUser(): Promise<AuthResponse['user']> {
-    return this.get<AuthResponse['user']>('/auth/me');
+    return this.get<AuthResponse['user']>('/api/admin/auth/me');
   }
 
   /**
    * Authenticate with Google
    */
   async googleAuth(data: GoogleAuthRequest): Promise<AuthResponse> {
-    const response = await this.post<AuthResponse>('/auth/google', data);
+    const response = await this.post<AuthResponse>('/api/admin/auth/google', data);
     
     // Store tokens
     if (response.tokens) {
@@ -34,14 +34,14 @@ class AuthClient extends ApiClient {
    * Send OTP to email
    */
   async sendOTP(data: OTPRequest): Promise<{ message: string }> {
-    return this.post<{ message: string }>('/auth/send-otp', data);
+    return this.post<{ message: string }>('/api/admin/auth/send-otp', data);
   }
 
   /**
    * Verify OTP and sign in
    */
   async verifyOTP(data: OTPVerifyRequest): Promise<AuthResponse> {
-    const response = await this.post<AuthResponse>('/auth/verify-otp', data);
+    const response = await this.post<AuthResponse>('/api/admin/auth/verify-otp', data);
     
     // Store tokens
     if (response.tokens) {
@@ -56,7 +56,7 @@ class AuthClient extends ApiClient {
    * Refresh access token
    */
   async refreshAccessToken(data: RefreshTokenRequest): Promise<AuthResponse> {
-    const response = await this.post<AuthResponse>('/auth/refresh-token', data);
+    const response = await this.post<AuthResponse>('/api/admin/auth/refresh-token', data);
     
     // Store new tokens
     if (response.tokens) {
@@ -72,7 +72,7 @@ class AuthClient extends ApiClient {
    */
   async logout(): Promise<void> {
     try {
-      await this.post('/auth/logout');
+      await this.post('/api/admin/auth/logout');
     } finally {
       // Clear tokens regardless of API call success
       localStorage.removeItem('accessToken');

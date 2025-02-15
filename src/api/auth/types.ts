@@ -17,7 +17,7 @@ export interface AuthResponse {
   message: string;
 }
 
-export interface GoogleAuthRequest {
+export interface FirebaseAuthRequest {
   token: string;
 }
 

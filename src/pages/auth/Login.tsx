@@ -23,7 +23,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showResendButton, setShowResendButton] = useState(false);
 
-  const { loginWithGoogle, loginWithOtp, verifyOtp, loading } = useAuth();
+  const { loginWithFirebase, loginWithOtp, verifyOtp, loading } = useAuth();
   const { otpFlow, setOtpFlowState, clearOtpFlow } = useAuthStore();
   const navigate = useNavigate();
 
@@ -57,7 +57,7 @@ const Login: React.FC = () => {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const token = await result.user.getIdToken();
-      await loginWithGoogle(token);
+      await loginWithFirebase(token);
       navigate('/dashboard');
     } catch (err) {
       setError('Failed to login with Google. Please try again.');

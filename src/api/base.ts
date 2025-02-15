@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { AuthTokens } from './auth/types';
 
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
 export class ApiClient {
   private client: AxiosInstance;
@@ -21,15 +21,28 @@ export class ApiClient {
 
   private setupInterceptors() {
     // Request Interceptor
+    // Define public auth endpoints that don't need token
+    const publicAuthEndpoints = [
+      '/auth/email/otp',
+      '/auth/email/verify',
+      '/auth/firebase'
+    ];
+
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        const accessToken = localStorage.getItem('accessToken');
-        if (accessToken) {
-          config.headers['Authorization'] = `Bearer ${accessToken}`;
+        const url = config.url || '';
+        const isPublicEndpoint = publicAuthEndpoints.some(endpoint => url.includes(endpoint));
+
+        // Only add authorization header for non-public endpoints
+        if (!isPublicEndpoint) {
+          const accessToken = localStorage.getItem('accessToken');
+          if (accessToken) {
+            config.headers['Authorization'] = `Bearer ${accessToken}`;
+          }
         }
+
         // Log the full URL being requested
         const baseUrl = config.baseURL || '';
-        const url = config.url || '';
         console.log('[API] Making request to:', `${baseUrl}${url}`);
         return config;
       },
@@ -46,15 +59,28 @@ export class ApiClient {
           return Promise.reject(error);
         }
 
-        // If error is not 401 or request already retried, reject
+        // Define public auth endpoints that don't need token refresh
+        const publicAuthEndpoints = [
+          '/auth/email/otp',
+          '/auth/email/verify',
+          '/auth/firebase'
+        ];
+        
+        // Skip token refresh for public endpoints or if not 401 or already retried
         if (
           error.response?.status !== 401 ||
-          (originalRequest as any)._retry
+          (originalRequest as any)._retry ||
+          publicAuthEndpoints.some(endpoint => originalRequest.url?.includes(endpoint))
         ) {
           return Promise.reject(this.handleError(error));
         }
 
         try {
+          const refreshToken = localStorage.getItem('refreshToken');
+          if (!refreshToken) {
+            throw new Error('No refresh token available');
+          }
+
           // Handle token refresh
           if (!this.refreshPromise) {
             this.refreshPromise = this.refreshToken();
@@ -87,7 +113,7 @@ export class ApiClient {
       throw new Error('No refresh token available');
     }
 
-    const response = await this.client.post('/api/admin/auth/refresh-token', {
+    const response = await this.client.post('/auth/refresh', {
       refreshToken,
     });
 

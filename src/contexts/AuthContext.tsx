@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  loginWithGoogle: (token: string) => Promise<void>;
+  loginWithFirebase: (token: string) => Promise<void>;
   loginWithOtp: (email: string) => Promise<boolean>;
   verifyOtp: (otp: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -52,16 +52,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const loginWithGoogle = async (token: string) => {
+  const loginWithFirebase = async (token: string) => {
     store.setLoading(true);
     try {
-      const response = await authClient.googleAuth({ token });
+      const response = await authClient.firebaseAuth({ token });
       store.setUser(response.user);
       store.setTokens(response.tokens.accessToken, response.tokens.refreshToken);
     } catch (error) {
-      console.error('Google login error:', error);
+      console.error('Firebase login error:', error);
       const apiError = error as ApiError;
-      throw new Error(apiError.message || 'Failed to login with Google');
+      throw new Error(apiError.message || 'Failed to login with Firebase');
     } finally {
       store.setLoading(false);
     }
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: store.user,
         loading: store.loading,
         isAuthenticated: store.isAuthenticated,
-        loginWithGoogle,
+        loginWithFirebase,
         loginWithOtp,
         verifyOtp,
         logout

@@ -3,7 +3,8 @@ import {
   Box,
   Container,
   Typography,
-  Paper
+  Paper,
+  Stack
 } from '@mui/material';
 import { 
   DataGrid, 
@@ -94,27 +95,34 @@ const Users: React.FC = () => {
 
   return (
     <Layout>
-      <Container maxWidth="lg">
-        <Box sx={{ py: 4 }}>
-          <Typography variant="h4" sx={{ mb: 3 }}>
-            Users
-          </Typography>
+      <Container maxWidth="xl">
+        <Stack spacing={3} sx={{ p: 3 }}>
+          <Box>
+            <Typography variant="h4" sx={{ mb: 3 }}>
+              Users
+            </Typography>
 
-          <Paper>
-            <DataGrid
-              rows={users}
-              columns={columns}
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              loading={loading}
-              rowCount={totalRows}
-              pageSizeOptions={[10, 25, 50]}
-              disableRowSelectionOnClick
-              autoHeight
-              sx={{ minHeight: 400 }}
-            />
-          </Paper>
-        </Box>
+            <Paper>
+              <DataGrid
+                rows={users}
+                columns={columns}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                loading={loading}
+                rowCount={totalRows}
+                pageSizeOptions={[10, 25, 50]}
+                disableRowSelectionOnClick
+                autoHeight
+                sx={{ 
+                  minHeight: 400,
+                  '& .MuiDataGrid-root': {
+                    border: 'none',
+                  }
+                }}
+              />
+            </Paper>
+          </Box>
+        </Stack>
       </Container>
     </Layout>
   );

@@ -72,9 +72,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <Layout>
-      <Container maxWidth="lg">
-        <Stack spacing={3} sx={{ py: 4 }}>
-          <Box sx={{ mb: 3 }}>
+      <Container maxWidth="xl">
+        <Stack spacing={3} sx={{ p: 3 }}>
+          <Box>
             <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 600, mb: 1 }}>
               Dashboard
             </Typography>
@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
             </Typography>
           </Box>
 
-          <Alert severity="info" sx={{ mb: 3 }}>
+          <Alert severity="info">
             This is a demo dashboard. The stats below are placeholder data.
           </Alert>
 

@@ -49,7 +49,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           flexGrow: 1,
           bgcolor: 'background.default',
           mt: { xs: 7, sm: 8 },
-          p: 3,
           transition: (theme) =>
             theme.transitions.create('margin', {
               easing: theme.transitions.easing.sharp,

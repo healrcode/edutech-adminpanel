@@ -69,15 +69,11 @@ const useAuthStore = create<AuthStore>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        tokens: state.tokens,
         otpFlow: state.otpFlow,
-        // Don't persist sensitive data
-        user: null,
-        isAuthenticated: false,
         loading: false,
-        tokens: {
-          accessToken: null,
-          refreshToken: null,
-        },
       }),
     }
   )

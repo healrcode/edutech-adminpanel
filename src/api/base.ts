@@ -19,6 +19,14 @@ export class ApiClient {
     this.setupInterceptors();
   }
 
+  public setAuthToken(token: string | null) {
+    if (token) {
+      this.client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete this.client.defaults.headers.common['Authorization'];
+    }
+  }
+
   private setupInterceptors() {
     // Request Interceptor
     // Define public auth endpoints that don't need token
@@ -30,19 +38,9 @@ export class ApiClient {
 
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        const url = config.url || '';
-        const isPublicEndpoint = publicAuthEndpoints.some(endpoint => url.includes(endpoint));
-
-        // Only add authorization header for non-public endpoints
-        if (!isPublicEndpoint) {
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            config.headers['Authorization'] = `Bearer ${accessToken}`;
-          }
-        }
-
         // Log the full URL being requested
         const baseUrl = config.baseURL || '';
+        const url = config.url || '';
         console.log('[API] Making request to:', `${baseUrl}${url}`);
         return config;
       },
@@ -52,82 +50,35 @@ export class ApiClient {
     // Response Interceptor
     this.client.interceptors.response.use(
       (response) => response,
-      async (error: AxiosError) => {
-        const originalRequest = error.config;
-        
-        if (!originalRequest) {
-          return Promise.reject(error);
-        }
-
-        // Define public auth endpoints that don't need token refresh
-        const publicAuthEndpoints = [
-          '/auth/email/otp',
-          '/auth/email/verify',
-          '/auth/firebase'
-        ];
-        
-        // Skip token refresh for public endpoints or if not 401 or already retried
-        if (
-          error.response?.status !== 401 ||
-          (originalRequest as any)._retry ||
-          publicAuthEndpoints.some(endpoint => originalRequest.url?.includes(endpoint))
-        ) {
-          return Promise.reject(this.handleError(error));
-        }
-
-        try {
-          const refreshToken = localStorage.getItem('refreshToken');
-          if (!refreshToken) {
-            throw new Error('No refresh token available');
-          }
-
-          // Handle token refresh
-          if (!this.refreshPromise) {
-            this.refreshPromise = this.refreshToken();
-          }
-          
-          const tokens = await this.refreshPromise;
-          this.refreshPromise = null;
-
-          // Update tokens
-          localStorage.setItem('accessToken', tokens.accessToken);
-          localStorage.setItem('refreshToken', tokens.refreshToken);
-
-          // Retry original request
-          (originalRequest as any)._retry = true;
-          originalRequest.headers['Authorization'] = `Bearer ${tokens.accessToken}`;
-          return this.client(originalRequest);
-        } catch (refreshError) {
-          // Clear tokens and reject
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          return Promise.reject(this.handleError(refreshError));
-        }
+      (error: AxiosError) => {
+        // Just return the error without attempting refresh
+        return Promise.reject(this.handleError(error));
       }
     );
   }
 
-  private async refreshToken(): Promise<AuthTokens> {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    const response = await this.client.post('/auth/refresh', {
-      refreshToken,
-    });
-
-    return response.data.tokens;
-  }
 
   private handleError(error: any) {
     if (axios.isAxiosError(error)) {
       console.error('[API] Error response:', error.response?.data);
-      const apiError = error.response?.data?.error || {
-        code: 'unknown',
-        message: 'An unknown error occurred',
+      
+      // Handle wrapped error response
+      if (error.response?.data?.success === false) {
+        const apiError = error.response.data.error;
+        if (apiError) {
+          return {
+            code: apiError.code || 'unknown',
+            message: apiError.message || 'An unknown error occurred',
+            details: apiError.details
+          };
+        }
+      }
+
+      // Fallback error
+      return {
+        code: error.response?.status === 401 ? 'unauthorized' : 'unknown',
+        message: error.response?.data?.message || error.message || 'An unknown error occurred'
       };
-      return apiError;
     }
     return {
       code: 'unknown',
@@ -137,26 +88,30 @@ export class ApiClient {
 
   protected async get<T>(url: string) {
     console.log('[API] GET request to:', BASE_URL + url);
-    const response = await this.client.get<T>(url);
-    return response.data;
+    const response = await this.client.get<{ success: boolean; data: T }>(url);
+    console.log('[API] Response data:', response.data);
+    return response.data.data;
   }
 
   protected async post<T>(url: string, data?: any) {
     console.log('[API] POST request to:', BASE_URL + url, 'with data:', data);
-    const response = await this.client.post<T>(url, data);
-    return response.data;
+    const response = await this.client.post<{ success: boolean; data: T }>(url, data);
+    console.log('[API] Response data:', response.data);
+    return response.data.data;
   }
 
   protected async put<T>(url: string, data?: any) {
     console.log('[API] PUT request to:', BASE_URL + url, 'with data:', data);
-    const response = await this.client.put<T>(url, data);
-    return response.data;
+    const response = await this.client.put<{ success: boolean; data: T }>(url, data);
+    console.log('[API] Response data:', response.data);
+    return response.data.data;
   }
 
   protected async delete<T>(url: string) {
     console.log('[API] DELETE request to:', BASE_URL + url);
-    const response = await this.client.delete<T>(url);
-    return response.data;
+    const response = await this.client.delete<{ success: boolean; data: T }>(url);
+    console.log('[API] Response data:', response.data);
+    return response.data.data;
   }
 }
 

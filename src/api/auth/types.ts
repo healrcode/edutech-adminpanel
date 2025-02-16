@@ -13,8 +13,14 @@ export interface AuthResponse {
     status: string;
     avatar?: string;
   };
-  tokens: AuthTokens;
-  message: string;
+  accessToken: string;
+  refreshToken: string;
+  session: {
+    id: string;
+    expiresAt: string;
+    refreshExpiresAt?: string;
+  };
+  message?: string;
 }
 
 export interface FirebaseAuthRequest {

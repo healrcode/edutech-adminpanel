@@ -16,12 +16,13 @@ import {
 } from '@mui/material';
 import { Google as GoogleIcon } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Login: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showResendButton, setShowResendButton] = useState(false);
+  const [authSuccessful, setAuthSuccessful] = useState(false);
 
   const { loginWithFirebase, loginWithOtp, verifyOtp, loading } = useAuth();
   const { otpFlow, setOtpFlowState, clearOtpFlow } = useAuthStore();
@@ -42,26 +43,47 @@ const Login: React.FC = () => {
     };
   }, [otpFlow.showOtp]);
 
-  // Clean up on unmount if not navigating to dashboard
+  // Clean up on unmount if auth was not successful
   useEffect(() => {
     return () => {
-      if (window.location.pathname !== '/dashboard') {
+      console.log('Login: Cleanup effect running', {
+        authSuccessful
+      });
+
+      if (!authSuccessful) {
+        console.log('Login: Cleaning up OTP flow - not a successful auth');
         clearOtpFlow();
+      } else {
+        console.log('Login: Preserving OTP flow - successful auth');
       }
     };
-  }, [clearOtpFlow]);
+  }, [clearOtpFlow, authSuccessful]);
 
   const handleGoogleLogin = async () => {
     try {
+      console.log('Login: Starting Google login flow');
       setError(null);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const token = await result.user.getIdToken();
+      
+      console.log('Login: Got Firebase token, authenticating with backend');
       await loginWithFirebase(token);
-      navigate('/dashboard');
+      
+      console.log('Login: Firebase auth successful, checking state before navigation');
+      const currentUser = useAuthStore.getState().user;
+      const isAuth = useAuthStore.getState().isAuthenticated;
+      console.log('Login: Auth state after Firebase login:', {
+        hasUser: !!currentUser,
+        isAuthenticated: isAuth,
+        userRole: currentUser?.role
+      });
+
+      setAuthSuccessful(true);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
+      console.error('Login: Google login error:', err);
       setError('Failed to login with Google. Please try again.');
-      console.error(err);
     }
   };
 
@@ -89,15 +111,23 @@ const Login: React.FC = () => {
     if (!otp) return;
 
     try {
+      console.log('Login: Starting OTP verification');
       setError(null);
       await verifyOtp(otp);
-      // Let the cleanup run after navigation
-      navigate('/dashboard');
+      
+      // Set auth successful before navigation
+      setAuthSuccessful(true);
+      
+      // Small delay to ensure state updates are processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('Login: OTP verification successful, navigating to dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
+      console.log('Login: OTP verification error:', err);
       // Just clear the OTP field on error, keep the OTP input visible
       setOtp('');
       setError('Invalid OTP. Please try again. (Hint: Use 123456)');
-      console.error(err);
       // Force ensure OTP input stays visible
       setOtpFlowState(otpFlow.email, true);
     }

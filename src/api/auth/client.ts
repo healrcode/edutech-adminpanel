@@ -21,11 +21,10 @@ class AuthClient extends ApiClient {
   async firebaseAuth(data: FirebaseAuthRequest): Promise<AuthResponse> {
     const response = await this.post<AuthResponse>('/auth/firebase', data);
     
-    // Store tokens
-    if (response.tokens) {
-      localStorage.setItem('accessToken', response.tokens.accessToken);
-      localStorage.setItem('refreshToken', response.tokens.refreshToken);
-    }
+    // Store tokens and set auth header
+    localStorage.setItem('accessToken', response.accessToken);
+    localStorage.setItem('refreshToken', response.refreshToken);
+    this.setAuthToken(response.accessToken);
 
     return response;
   }
@@ -41,30 +40,14 @@ class AuthClient extends ApiClient {
    * Verify OTP and sign in
    */
   async verifyOTP(data: OTPVerifyRequest): Promise<AuthResponse> {
-    const response = await this.post<AuthResponse>('/auth/email/verify', data);
-    
-    // Store tokens
-    if (response.tokens) {
-      localStorage.setItem('accessToken', response.tokens.accessToken);
-      localStorage.setItem('refreshToken', response.tokens.refreshToken);
-    }
-
-    return response;
+    return this.post<AuthResponse>('/auth/email/verify', data);
   }
 
   /**
    * Refresh access token
    */
   async refreshAccessToken(data: RefreshTokenRequest): Promise<AuthResponse> {
-    const response = await this.post<AuthResponse>('/auth/refresh', data);
-    
-    // Store new tokens
-    if (response.tokens) {
-      localStorage.setItem('accessToken', response.tokens.accessToken);
-      localStorage.setItem('refreshToken', response.tokens.refreshToken);
-    }
-
-    return response;
+    return this.post<AuthResponse>('/auth/refresh', data);
   }
 
   /**
@@ -74,9 +57,10 @@ class AuthClient extends ApiClient {
     try {
       await this.post('/auth/logout');
     } finally {
-      // Clear tokens regardless of API call success
+      // Clear tokens and auth header regardless of API call success
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      this.setAuthToken(null);
     }
   }
 }

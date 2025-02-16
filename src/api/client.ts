@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import type { ApiResponse, ApiError } from './types';
+import type { ApiResponse, ApiError, PaginatedResponse } from './types';
 import useAuthStore from '../store/authStore';
 import { refreshToken } from '../services/auth';
 
@@ -57,6 +57,15 @@ api.interceptors.response.use(
       const apiResponse = response.data as ApiResponse<T>;
       if (!apiResponse.success) {
         throw new Error(apiResponse.error?.message || 'API request failed');
+      }
+      // Return full response for paginated data
+      if (Array.isArray(apiResponse.data) && 'total' in apiResponse) {
+        return {
+          data: apiResponse.data,
+          total: apiResponse.total,
+          page: apiResponse.page,
+          pageSize: apiResponse.pageSize
+        } as PaginatedResponse<T>;
       }
       return apiResponse.data;
     }

@@ -7,6 +7,9 @@ export interface ApiResponse<T> {
     message: string;
     details?: any;
   };
+  total?: number;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface ApiError {

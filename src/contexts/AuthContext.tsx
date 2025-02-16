@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
-import { authClient } from '../api/auth/client';
+import { authApi } from '../api/auth';
+import { setAuthToken } from '../api/client';
 import type { User } from '../store/types';
-import type { ApiError } from '../api/auth/types';
+import type { ApiResponse, ApiError } from '../api/types';
 
 interface AuthContextType {
   user: User | null;
@@ -29,12 +30,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Only check token validity on mount
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializeAuth = async () => {
       try {
-        console.log('AuthContext: Starting auth check');
+        console.log('AuthContext: Starting auth initialization');
         store.setLoading(true);
         
-        // Get tokens from localStorage
+        // Get stored tokens
         const accessToken = localStorage.getItem('accessToken');
         const refreshToken = localStorage.getItem('refreshToken');
         
@@ -42,37 +43,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('AuthContext: No tokens found, clearing state');
           store.setUser(null);
           store.setTokens(null, null);
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          authClient.setAuthToken(null);
+          setAuthToken(null);
           return;
         }
 
-        // Just set the tokens and trust the stored user data
-        store.setTokens(accessToken, refreshToken);
-        authClient.setAuthToken(accessToken);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        // Clear everything on error including API client auth
-        store.setUser(null);
-        store.setTokens(null, null);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        authClient.setAuthToken(null);
+        // Set token in API client
+        setAuthToken(accessToken);
+        
+        try {
+          // Verify token by making a test request
+          const user = await authApi.me();
+          store.setUser(user);
+          store.setTokens(accessToken, refreshToken);
+          console.log('AuthContext: Auth state restored successfully');
+        } catch (error) {
+          console.error('AuthContext: Token validation failed:', error);
+          // Token validation failed, clear auth state
+          store.setUser(null);
+          store.setTokens(null, null);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          setAuthToken(null);
+        }
       } finally {
         store.setLoading(false);
       }
     };
 
-    checkAuth();
-  }, [store.tokens.accessToken]); // Re-run when access token changes
+    initializeAuth();
+    // We intentionally only want this to run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loginWithFirebase = async (token: string) => {
     store.setLoading(true);
     try {
-      const response = await authClient.firebaseAuth({ token });
-      store.setUser(response.user);
+      const response = await authApi.firebaseAuth({ token });
+      
+      // Set token in API client first
+      setAuthToken(response.accessToken);
+      
+      // Then update store and localStorage
+      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem('refreshToken', response.refreshToken);
       store.setTokens(response.accessToken, response.refreshToken);
+      store.setUser(response.user);
     } catch (error) {
       console.error('Firebase login error:', error);
       const apiError = error as ApiError;
@@ -85,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithOtp = async (email: string) => {
     console.log('AuthContext: Starting loginWithOtp for:', email);
     try {
-      await authClient.sendOTP({ email });
+      await authApi.sendOTP(email);
       store.setOtpFlowState(email, true);
       return true;
     } catch (error) {
@@ -105,10 +120,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       console.log('AuthContext: Starting OTP verification');
-      const response = await authClient.verifyOTP({ email, otp });
+      const response = await authApi.verifyOTP({ email, otp });
       
-      // Update everything in the correct order
-      authClient.setAuthToken(response.accessToken);
+      // Set token in API client first
+      setAuthToken(response.accessToken);
+      
+      // Then update store and localStorage
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
       store.setTokens(response.accessToken, response.refreshToken);
@@ -130,7 +147,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     store.setLoading(true);
     try {
-      await authClient.logout();
+      await authApi.logout();
+      
+      // Clear token from API client
+      setAuthToken(null);
+      
+      // Clear localStorage
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

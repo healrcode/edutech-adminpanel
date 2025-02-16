@@ -10,6 +10,7 @@ import theme from './theme';
 // Pages
 import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
+import Users from './pages/users/Users';
 
 // Route Guards
 import PublicRoute from './components/common/PublicRoute';
@@ -59,6 +60,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'SUPERADMIN']}>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                  <Users />
                 </ProtectedRoute>
               }
             />

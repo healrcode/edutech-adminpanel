@@ -1,17 +1,8 @@
-import React from 'react';
-import {
-  AppBar,
-  Box,
-  Toolbar,
-  Typography,
-  Button,
-  Avatar,
-  Stack,
-  Container,
-  Tooltip
-} from '@mui/material';
-import { Logout as LogoutIcon } from '@mui/icons-material';
+import React, { useState } from 'react';
+import { Box } from '@mui/material';
 import { useAuth } from '../../contexts/AuthContext';
+import Header from './Header/Header';
+import Sidebar from './Sidebar/Sidebar';
 import useAuthStore from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,30 +14,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout, loading } = useAuth();
   const { clearOtpFlow } = useAuthStore();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = async () => {
     try {
       await logout();
-      clearOtpFlow(); // Clear OTP state on logout
+      clearOtpFlow();
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
 
-  const getInitials = (text: string) => {
-    return text
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
-
-  const getDisplayName = (user: { firstName?: string; lastName?: string; email: string }) => {
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
-    }
-    return user.email;
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
   if (loading) {
@@ -54,67 +35,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar 
-        position="fixed"
-        elevation={0}
-        sx={{
-          bgcolor: 'background.paper',
-          borderBottom: '1px solid',
-          borderColor: 'divider'
-        }}
-      >
-        <Toolbar>
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              flexGrow: 1,
-              color: 'primary.main',
-              fontWeight: 600
-            }}
-          >
-            EduTech Admin
-          </Typography>
-          
-          {user && (
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Tooltip title={user.email}>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: 'primary.main',
-                    width: 32,
-                    height: 32,
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  {getInitials(getDisplayName(user))}
-                </Avatar>
-              </Tooltip>
-              <Button 
-                onClick={handleLogout}
-                startIcon={<LogoutIcon />}
-                sx={{ 
-                  color: 'text.primary',
-                  '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.04)'
-                  }
-                }}
-              >
-                Logout
-              </Button>
-            </Stack>
-          )}
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Header onMenuClick={handleSidebarToggle} />
+      
+      <Sidebar
+        open={sidebarOpen}
+        onToggle={handleSidebarToggle}
+      />
       
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           bgcolor: 'background.default',
-          pt: { xs: 7, sm: 8 },
-          pb: 3
+          mt: { xs: 7, sm: 8 },
+          p: 3,
+          transition: (theme) =>
+            theme.transitions.create('margin', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.leavingScreen,
+            }),
+          ...(sidebarOpen && {
+            marginLeft: '280px',
+            transition: (theme) =>
+              theme.transitions.create('margin', {
+                easing: theme.transitions.easing.easeOut,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+          }),
+          ...(!sidebarOpen && {
+            marginLeft: '72px',
+          }),
         }}
       >
         {children}

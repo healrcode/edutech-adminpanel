@@ -12,10 +12,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  LibraryBooks as LibraryBooksIcon,
-  InsightsOutlined as InsightsIcon,
-  Settings as SettingsIcon
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { SvgIconComponent } from '@mui/icons-material';
 import SidebarItem from './SidebarItem';
@@ -35,37 +32,9 @@ const navigation: NavItem[] = [
     icon: DashboardIcon
   },
   {
-    title: 'Content Management',
-    path: '/content',
-    icon: LibraryBooksIcon,
-    children: [
-      { title: 'Programs', path: '/programs' },
-      { title: 'Courses', path: '/courses' }
-    ]
-  },
-  {
     title: 'User Management',
-    path: '/user',
-    icon: PeopleIcon,
-    children: [
-      { title: 'Users', path: '/users' },
-      { title: 'Admins', path: '/admins' }
-    ]
-  },
-  {
-    title: 'Analytics',
-    path: '/analytics',
-    icon: InsightsIcon,
-    children: [
-      { title: 'Overview', path: '/analytics' },
-      { title: 'User Analytics', path: '/analytics/users' },
-      { title: 'Content Analytics', path: '/analytics/content' }
-    ]
-  },
-  {
-    title: 'Settings',
-    path: '/settings',
-    icon: SettingsIcon
+    path: '/users',
+    icon: PeopleIcon
   }
 ];
 

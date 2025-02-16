@@ -46,17 +46,31 @@ const Users: React.FC = () => {
   const fetchUsers = useCallback(async () => {
     if (!pageLoaded) {
       try {
+        console.log('[Users] Fetching users:', {
+          page: paginationModel.page + 1,
+          pageSize: paginationModel.pageSize,
+          hasToken: !!localStorage.getItem('accessToken')
+        });
         setError(null);
         setIsLoading(true);
         const response = await usersApi.list({
           page: paginationModel.page + 1,
           pageSize: paginationModel.pageSize
         });
+        console.log('[Users] Users fetched successfully:', {
+          count: response.data?.length || 0,
+          total: response.total || 0
+        });
         setUsers(response.data || []);
         setTotalRows(response.total || 0);
         setPageLoaded(true);
       } catch (error: any) {
-        console.error('Error fetching users:', error);
+        console.error('[Users] Error fetching users:', {
+          error,
+          status: error.response?.status,
+          message: error.message,
+          hasToken: !!localStorage.getItem('accessToken')
+        });
         setError(error.message || 'Failed to fetch users. Please try again later.');
         setUsers([]);
         setTotalRows(0);

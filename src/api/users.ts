@@ -28,9 +28,9 @@ export const usersApi = {
     return api.get(`/admin/users/${userId}`);
   },
 
-  // Update user
-  update: async (userId: string, data: UserUpdateRequest): Promise<User> => {
-    return api.put(`/admin/users/${userId}`, data);
+  // Update user role
+  updateRole: async (userId: string, role: string): Promise<User> => {
+    return api.put(`/admin/users/${userId}/role`, { role });
   },
 
   // Update user status
@@ -38,8 +38,8 @@ export const usersApi = {
     return api.put(`/admin/users/${userId}/status`, { status });
   },
 
-  // Update user role
-  updateRole: async (userId: string, role: string): Promise<User> => {
-    return api.put(`/admin/users/${userId}/role`, { role });
+  // Get current user profile
+  me: async (): Promise<User> => {
+    return api.get('/users/me');
   }
 };

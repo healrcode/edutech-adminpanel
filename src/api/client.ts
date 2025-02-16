@@ -31,11 +31,17 @@ api.interceptors.request.use(
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    // Log request (development only)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[API] Making request to:', `${config.baseURL}${config.url}`);
+      // Log token presence and format
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[API] Request auth header:', {
+          url: `${config.baseURL}${config.url}`,
+          hasToken: !!token,
+          tokenPrefix: token.substring(0, 10) + '...',
+          headers: config.headers
+        });
+      }
+    } else {
+      console.warn('[API] No access token found for request:', `${config.baseURL}${config.url}`);
     }
 
     return config;
@@ -59,8 +65,24 @@ api.interceptors.response.use(
   async (error: AxiosError<ApiResponse<any>>) => {
     const originalRequest = error.config;
     
+    // Log error details
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[API] Error response:', {
+        status: error.response?.status,
+        url: originalRequest?.url,
+        method: originalRequest?.method,
+        hasToken: !!originalRequest?.headers?.Authorization,
+        error: error.response?.data
+      });
+    }
+    
     // Handle 401 errors
     if (error.response?.status === 401 && originalRequest) {
+      console.log('[API] Handling 401 error:', {
+        isRefreshing,
+        hasRefreshToken: !!localStorage.getItem('refreshToken'),
+        originalUrl: originalRequest.url
+      });
       if (!isRefreshing) {
         isRefreshing = true;
         

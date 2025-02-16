@@ -32,7 +32,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        console.log('AuthContext: Starting auth initialization');
+        console.log('[Auth] Starting auth initialization:', {
+          hasAccessToken: !!localStorage.getItem('accessToken'),
+          hasRefreshToken: !!localStorage.getItem('refreshToken'),
+          isAuthenticated: store.isAuthenticated,
+          currentUser: store.user?.email
+        });
         store.setLoading(true);
         
         // Get stored tokens
@@ -40,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const refreshToken = localStorage.getItem('refreshToken');
         
         if (!accessToken || !refreshToken) {
-          console.log('AuthContext: No tokens found, clearing state');
+          console.log('[Auth] No tokens found, clearing state');
           store.setUser(null);
           store.setTokens(null, null);
           setAuthToken(null);
@@ -55,9 +60,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const user = await authApi.me();
           store.setUser(user);
-          console.log('AuthContext: Auth state restored with user:', user.email);
+          console.log('[Auth] Auth state restored:', {
+            user: user.email,
+            role: user.role,
+            isAuthenticated: store.isAuthenticated
+          });
         } catch (error) {
-          console.error('AuthContext: Failed to get user info:', error);
+          console.error('[Auth] Failed to get user info:', error);
           // Don't clear tokens, let the API client handle refresh if needed
         }
       } finally {
@@ -83,8 +92,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('refreshToken', response.refreshToken);
       store.setTokens(response.accessToken, response.refreshToken);
       store.setUser(response.user);
+
+      console.log('[Auth] Firebase login successful:', {
+        user: response.user.email,
+        role: response.user.role,
+        accessTokenPrefix: response.accessToken.substring(0, 10) + '...',
+        refreshTokenPrefix: response.refreshToken.substring(0, 10) + '...',
+        isAuthenticated: store.isAuthenticated
+      });
     } catch (error) {
-      console.error('Firebase login error:', error);
+      console.error('[Auth] Firebase login error:', error);
       const apiError = error as ApiError;
       throw new Error(apiError.message || 'Failed to login with Firebase');
     } finally {
@@ -93,13 +110,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithOtp = async (email: string) => {
-    console.log('AuthContext: Starting loginWithOtp for:', email);
+    console.log('[Auth] Starting loginWithOtp:', { email });
     try {
       await authApi.sendOTP(email);
       store.setOtpFlowState(email, true);
+      console.log('[Auth] OTP sent successfully');
       return true;
     } catch (error) {
-      console.error('OTP send error:', error);
+      console.error('[Auth] OTP send error:', error);
       store.clearOtpFlow();
       const apiError = error as ApiError;
       throw new Error(apiError.message || 'Failed to send OTP');
@@ -114,7 +132,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('No email found for OTP verification');
       }
 
-      console.log('AuthContext: Starting OTP verification');
+      console.log('[Auth] Starting OTP verification:', { 
+        email,
+        otpLength: otp.length,
+        hasAccessToken: !!store.tokens.accessToken,
+        hasRefreshToken: !!store.tokens.refreshToken
+      });
       const response = await authApi.verifyOTP({ email, otp });
       
       // Set token in API client first
@@ -126,12 +149,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       store.setTokens(response.accessToken, response.refreshToken);
       store.setUser(response.user);
       
-      console.log('AuthContext: Auth successful:', {
+      console.log('[Auth] Auth successful:', {
         user: response.user.email,
-        role: response.user.role
+        role: response.user.role,
+        accessTokenPrefix: response.accessToken.substring(0, 10) + '...',
+        refreshTokenPrefix: response.refreshToken.substring(0, 10) + '...',
+        isAuthenticated: store.isAuthenticated
       });
     } catch (error) {
-      console.error('OTP verification error:', error);
+      console.error('[Auth] OTP verification error:', error);
       const apiError = error as ApiError;
       throw new Error(apiError.message || 'Failed to verify OTP');
     } finally {
@@ -150,8 +176,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear localStorage
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+
+      console.log('[Auth] Logout successful');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('[Auth] Logout error:', error);
     } finally {
       store.logout();
       store.setLoading(false);

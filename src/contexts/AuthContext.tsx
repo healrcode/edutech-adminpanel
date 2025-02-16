@@ -47,23 +47,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        // Set token in API client
+        // Set token in API client and restore auth state
         setAuthToken(accessToken);
+        store.setTokens(accessToken, refreshToken);
         
+        // Get user info
         try {
-          // Verify token by making a test request
           const user = await authApi.me();
           store.setUser(user);
-          store.setTokens(accessToken, refreshToken);
-          console.log('AuthContext: Auth state restored successfully');
+          console.log('AuthContext: Auth state restored with user:', user.email);
         } catch (error) {
-          console.error('AuthContext: Token validation failed:', error);
-          // Token validation failed, clear auth state
-          store.setUser(null);
-          store.setTokens(null, null);
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          setAuthToken(null);
+          console.error('AuthContext: Failed to get user info:', error);
+          // Don't clear tokens, let the API client handle refresh if needed
         }
       } finally {
         store.setLoading(false);

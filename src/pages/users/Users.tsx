@@ -29,7 +29,6 @@ interface AlertState {
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [alert, setAlert] = useState<AlertState>({
     open: false,
@@ -40,27 +39,32 @@ const Users: React.FC = () => {
     page: 0,
     pageSize: 10,
   });
+  const [isLoading, setIsLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
+  const [pageLoaded, setPageLoaded] = useState(false);
 
   const fetchUsers = useCallback(async () => {
-    try {
-      setError(null);
-      setLoading(true);
-      const response = await usersApi.list({
-        page: paginationModel.page + 1,
-        pageSize: paginationModel.pageSize
-      });
-      setUsers(response.data);
-      setTotalRows(response.total);
-    } catch (error: any) {
-      console.error('Error fetching users:', error);
-      setError(error.message || 'Failed to fetch users. Please try again later.');
-      setUsers([]);
-      setTotalRows(0);
-    } finally {
-      setLoading(false);
+    if (!pageLoaded) {
+      try {
+        setError(null);
+        setIsLoading(true);
+        const response = await usersApi.list({
+          page: paginationModel.page + 1,
+          pageSize: paginationModel.pageSize
+        });
+        setUsers(response.data || []);
+        setTotalRows(response.total || 0);
+        setPageLoaded(true);
+      } catch (error: any) {
+        console.error('Error fetching users:', error);
+        setError(error.message || 'Failed to fetch users. Please try again later.');
+        setUsers([]);
+        setTotalRows(0);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [paginationModel]);
+  }, [paginationModel, pageLoaded]);
 
   useEffect(() => {
     fetchUsers();
@@ -81,7 +85,7 @@ const Users: React.FC = () => {
   const handleStatusUpdate = async (userId: string, newStatus: string) => {
     try {
       await usersApi.updateStatus(userId, newStatus);
-      await fetchUsers();
+      setPageLoaded(false); // Trigger refetch
       showAlert(`User status updated to ${newStatus}`, 'success');
     } catch (error: any) {
       console.error('Error updating user status:', error);
@@ -92,12 +96,17 @@ const Users: React.FC = () => {
   const handleRoleUpdate = async (userId: string, newRole: string) => {
     try {
       await usersApi.updateRole(userId, newRole);
-      await fetchUsers();
+      setPageLoaded(false); // Trigger refetch
       showAlert(`User role updated to ${newRole}`, 'success');
     } catch (error: any) {
       console.error('Error updating user role:', error);
       showAlert(error.message || 'Failed to update user role', 'error');
     }
+  };
+
+  const handlePaginationModelChange = (newModel: any) => {
+    setPaginationModel(newModel);
+    setPageLoaded(false); // Trigger refetch for new page
   };
 
   const columns: GridColDef[] = [
@@ -198,7 +207,7 @@ const Users: React.FC = () => {
             )}
 
             <Paper>
-              {loading && users.length === 0 && (
+              {isLoading && users.length === 0 && (
                 <Box sx={{ p: 2 }}>
                   {[...Array(3)].map((_, index) => (
                     <Box key={index} sx={{ mb: 2 }}>
@@ -207,13 +216,14 @@ const Users: React.FC = () => {
                   ))}
                 </Box>
               )}
-              {(!loading || users.length > 0) && (
+              {(users.length > 0 || !isLoading) && (
                 <DataGrid
                   rows={users}
                   columns={columns}
                   paginationModel={paginationModel}
-                  onPaginationModelChange={setPaginationModel}
-                  loading={loading}
+                  onPaginationModelChange={handlePaginationModelChange}
+                  loading={isLoading}
+                  paginationMode="server"
                   rowCount={totalRows}
                   pageSizeOptions={[10, 25, 50]}
                   disableRowSelectionOnClick

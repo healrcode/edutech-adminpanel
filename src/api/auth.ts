@@ -16,7 +16,17 @@ interface FirebaseAuthRequest {
   token: string;
 }
 
+interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export const authApi = {
+  // Refresh token
+  refreshToken: async (refreshToken: string): Promise<TokenResponse> => {
+    return api.post('/auth/refresh', { refreshToken });
+  },
+
   // Get current user
   me: async (): Promise<User> => {
     return api.get('/auth/me');

@@ -19,22 +19,27 @@ interface UserUpdateRequest {
 
 export const usersApi = {
   // List users with pagination and filters
-  list: (params: UserListParams = {}): Promise<PaginatedResponse<User>> =>
-    api.get('/admin/users', { params }),
+  list: async (params: UserListParams = {}): Promise<PaginatedResponse<User>> => {
+    return api.get('/admin/users', { params });
+  },
 
   // Get single user by ID
-  get: (userId: string): Promise<User> =>
-    api.get(`/admin/users/${userId}`),
+  get: async (userId: string): Promise<User> => {
+    return api.get(`/admin/users/${userId}`);
+  },
 
   // Update user
-  update: (userId: string, data: UserUpdateRequest): Promise<User> =>
-    api.put(`/admin/users/${userId}`, data),
+  update: async (userId: string, data: UserUpdateRequest): Promise<User> => {
+    return api.put(`/admin/users/${userId}`, data);
+  },
 
   // Update user status
-  updateStatus: (userId: string, status: string): Promise<User> =>
-    api.put(`/admin/users/${userId}/status`, { status }),
+  updateStatus: async (userId: string, status: string): Promise<User> => {
+    return api.put(`/admin/users/${userId}/status`, { status });
+  },
 
   // Update user role
-  updateRole: (userId: string, role: string): Promise<User> =>
-    api.put(`/admin/users/${userId}/role`, { role })
+  updateRole: async (userId: string, role: string): Promise<User> => {
+    return api.put(`/admin/users/${userId}/role`, { role });
+  }
 };

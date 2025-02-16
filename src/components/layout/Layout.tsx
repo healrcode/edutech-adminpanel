@@ -55,7 +55,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               duration: theme.transitions.duration.leavingScreen,
             }),
           ...(sidebarOpen && {
-            marginLeft: '100px',
+            ml: 3,
             transition: (theme) =>
               theme.transitions.create('margin', {
                 easing: theme.transitions.easing.easeOut,

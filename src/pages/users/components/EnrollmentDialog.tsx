@@ -37,6 +37,7 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [enrolling, setEnrolling] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
 
   const enrollmentColumns: GridColDef[] = [
     { 
@@ -119,7 +120,6 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
   ];
 
 
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -134,8 +134,10 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
           enrollmentsApi.getActiveEnrollments(user.id),
           enrollmentsApi.getAvailableCourses()
         ]);
-        setEnrollments(enrollmentsRes.data.data);
-        setAvailableCourses(coursesRes.data.data);
+        
+        // Add null checks and default to empty arrays
+        setEnrollments(enrollmentsRes?.data?.data || []);
+        setAvailableCourses(coursesRes?.data?.data || []);
       } catch (error: any) {
         console.error('Error fetching data:', error);
         setError(error.message || 'Failed to fetch data');
@@ -154,7 +156,7 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
     try {
       await enrollmentsApi.enrollUserInCourse(user.id, selectedCourse);
       const response = await enrollmentsApi.getActiveEnrollments(user.id);
-      setEnrollments(response.data.data);
+      setEnrollments(response?.data?.data || []);
       setSelectedCourse("");
       setError(null);
     } catch (error: any) {
@@ -172,7 +174,7 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
     try {
       await enrollmentsApi.issueCertificate(enrollmentId);
       const response = await enrollmentsApi.getActiveEnrollments(user.id);
-      setEnrollments(response.data.data);
+      setEnrollments(response?.data?.data || []);
       setError(null);
     } catch (error: any) {
       console.error("Error issuing certificate:", error);

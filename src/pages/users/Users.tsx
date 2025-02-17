@@ -11,24 +11,34 @@ import {
   Avatar,
   TextField,
   InputAdornment,
-  IconButton
+  IconButton,
+  Button,
+  Badge
 } from '@mui/material';
 import { 
   DataGrid, 
   GridColDef
 } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import Layout from '../../components/layout/Layout';
 import { usersApi } from '../../api/users';
 import { User } from '../../store/types';
 import UserActions from './components/UserActions';
 import StatusBadge from './components/StatusBadge';
 import RoleBadge from './components/RoleBadge';
+import FilterDrawer from './components/FilterDrawer';
+import { Role, UserStatus } from '../../common/enums';
 
 interface AlertState {
   open: boolean;
   message: string;
   severity: 'success' | 'error';
+}
+
+interface Filters {
+  role?: Role;
+  status?: UserStatus;
 }
 
 const Users: React.FC = () => {
@@ -47,6 +57,10 @@ const Users: React.FC = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [pageLoaded, setPageLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [filters, setFilters] = useState<Filters>({});
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   const fetchUsers = useCallback(async (search?: string) => {
     if (!pageLoaded || search !== undefined) {
@@ -55,6 +69,7 @@ const Users: React.FC = () => {
           page: paginationModel.page + 1,
           pageSize: paginationModel.pageSize,
           search: search || searchQuery,
+          filters,
           hasToken: !!localStorage.getItem('accessToken')
         });
         setError(null);
@@ -62,7 +77,9 @@ const Users: React.FC = () => {
         const response = await usersApi.list({
           page: paginationModel.page + 1,
           pageSize: paginationModel.pageSize,
-          search: search || searchQuery
+          search: search || searchQuery,
+          role: filters.role,
+          status: filters.status
         });
         console.log('[Users] Users fetched successfully:', {
           count: response.data?.length || 0,
@@ -85,7 +102,7 @@ const Users: React.FC = () => {
         setIsLoading(false);
       }
     }
-  }, [paginationModel, pageLoaded, searchQuery]);
+  }, [paginationModel, pageLoaded, searchQuery, filters]);
 
   useEffect(() => {
     fetchUsers();
@@ -139,6 +156,11 @@ const Users: React.FC = () => {
     if (event.key === 'Enter') {
       handleSearch();
     }
+  };
+
+  const handleApplyFilters = (newFilters: Filters) => {
+    setFilters(newFilters);
+    setPageLoaded(false); // Trigger refetch with new filters
   };
 
   const columns: GridColDef[] = [
@@ -254,6 +276,17 @@ const Users: React.FC = () => {
                 }}
                 sx={{ width: 300 }}
               />
+              <Button
+                variant="outlined"
+                startIcon={
+                  <Badge badgeContent={activeFilterCount} color="primary">
+                    <FilterListIcon />
+                  </Badge>
+                }
+                onClick={() => setIsFilterDrawerOpen(true)}
+              >
+                Filters
+              </Button>
             </Box>
 
             {error && (
@@ -296,6 +329,14 @@ const Users: React.FC = () => {
           </Box>
         </Stack>
       </Container>
+
+      <FilterDrawer
+        open={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        filters={filters}
+        onApplyFilters={handleApplyFilters}
+        activeFilterCount={activeFilterCount}
+      />
     </Layout>
   );
 };

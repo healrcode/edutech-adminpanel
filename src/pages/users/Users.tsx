@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -8,12 +8,15 @@ import {
   Alert,
   Skeleton,
   Snackbar,
-  Avatar
+  Avatar,
+  TextField,
+  InputAdornment
 } from '@mui/material';
 import { 
   DataGrid, 
   GridColDef
 } from '@mui/x-data-grid';
+import SearchIcon from '@mui/icons-material/Search';
 import Layout from '../../components/layout/Layout';
 import { usersApi } from '../../api/users';
 import { User } from '../../store/types';
@@ -26,6 +29,15 @@ interface AlertState {
   message: string;
   severity: 'success' | 'error';
 }
+
+// Debounce helper
+const debounce = (func: Function, wait: number) => {
+  let timeout: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -42,20 +54,23 @@ const Users: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
   const [pageLoaded, setPageLoaded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchUsers = useCallback(async () => {
-    if (!pageLoaded) {
+  const fetchUsers = useCallback(async (search?: string) => {
+    if (!pageLoaded || search !== undefined) {
       try {
         console.log('[Users] Fetching users:', {
           page: paginationModel.page + 1,
           pageSize: paginationModel.pageSize,
+          search: search || searchQuery,
           hasToken: !!localStorage.getItem('accessToken')
         });
         setError(null);
         setIsLoading(true);
         const response = await usersApi.list({
           page: paginationModel.page + 1,
-          pageSize: paginationModel.pageSize
+          pageSize: paginationModel.pageSize,
+          search: search || searchQuery
         });
         console.log('[Users] Users fetched successfully:', {
           count: response.data?.length || 0,
@@ -78,7 +93,15 @@ const Users: React.FC = () => {
         setIsLoading(false);
       }
     }
-  }, [paginationModel, pageLoaded]);
+  }, [paginationModel, pageLoaded, searchQuery]);
+
+  // Debounced search function
+  const debouncedSearch = useMemo(
+    () => debounce((value: string) => {
+      fetchUsers(value);
+    }, 500),
+    [fetchUsers]
+  );
 
   useEffect(() => {
     fetchUsers();
@@ -210,9 +233,31 @@ const Users: React.FC = () => {
       <Container maxWidth="xl">
         <Stack spacing={3} sx={{ p: 3 }}>
           <Box>
-            <Typography variant="h4" sx={{ mb: 3 }}>
-              Users
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h4">
+                Users
+              </Typography>
+              <TextField
+                placeholder="Search users..."
+                variant="outlined"
+                size="small"
+                value={searchQuery}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setSearchQuery(newValue);
+                  setPageLoaded(false);
+                  debouncedSearch(newValue);
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ width: 300 }}
+              />
+            </Box>
 
             {error && (
               <Alert severity="error" sx={{ mb: 3 }}>

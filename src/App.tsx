@@ -12,6 +12,7 @@ import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import Users from './pages/users/Users';
 import EnrollmentsAnalytics from './pages/enrollments/EnrollmentsAnalytics';
+import Courses from './pages/courses/Courses';
 
 // Route Guards
 import PublicRoute from './components/common/PublicRoute';
@@ -79,6 +80,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
                   <EnrollmentsAnalytics />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/courses"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                  <Courses />
                 </ProtectedRoute>
               }
             />

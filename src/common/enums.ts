@@ -9,3 +9,16 @@ export enum UserStatus {
     ACTIVE = "ACTIVE",
     SUSPENDED = "SUSPENDED"
 }
+
+export enum Status {
+    DRAFT = "DRAFT",
+    PUBLISHED = "PUBLISHED",
+    ARCHIVED = "ARCHIVED"
+}
+
+export enum CourseLevel {
+    BEGINNER = "BEGINNER",
+    INTERMEDIATE = "INTERMEDIATE",
+    ADVANCED = "ADVANCED",
+    EXPERT = "EXPERT"
+}

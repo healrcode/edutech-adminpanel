@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -10,7 +10,8 @@ import {
   Snackbar,
   Avatar,
   TextField,
-  InputAdornment
+  InputAdornment,
+  IconButton
 } from '@mui/material';
 import { 
   DataGrid, 
@@ -29,15 +30,6 @@ interface AlertState {
   message: string;
   severity: 'success' | 'error';
 }
-
-// Debounce helper
-const debounce = (func: Function, wait: number) => {
-  let timeout: NodeJS.Timeout;
-  return (...args: any[]) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-};
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -95,14 +87,6 @@ const Users: React.FC = () => {
     }
   }, [paginationModel, pageLoaded, searchQuery]);
 
-  // Debounced search function
-  const debouncedSearch = useMemo(
-    () => debounce((value: string) => {
-      fetchUsers(value);
-    }, 500),
-    [fetchUsers]
-  );
-
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
@@ -144,6 +128,17 @@ const Users: React.FC = () => {
   const handlePaginationModelChange = (newModel: any) => {
     setPaginationModel(newModel);
     setPageLoaded(false); // Trigger refetch for new page
+  };
+
+  const handleSearch = () => {
+    setPageLoaded(false);
+    fetchUsers(searchQuery);
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const columns: GridColDef[] = [
@@ -242,16 +237,18 @@ const Users: React.FC = () => {
                 variant="outlined"
                 size="small"
                 value={searchQuery}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setSearchQuery(newValue);
-                  setPageLoaded(false);
-                  debouncedSearch(newValue);
-                }}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton 
+                        onClick={handleSearch}
+                        edge="end"
+                        aria-label="search"
+                      >
+                        <SearchIcon />
+                      </IconButton>
                     </InputAdornment>
                   ),
                 }}

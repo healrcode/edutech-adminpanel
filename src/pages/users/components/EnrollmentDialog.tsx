@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -6,47 +6,21 @@ import {
   IconButton,
   Typography,
   Stack,
-  Tabs,
-  Tab,
   Box,
   Chip,
   Alert,
   Skeleton,
-  Grid,
-  Paper,
+  Button,
+  TextField,
+  MenuItem,
   CircularProgress,
-  Button
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { User } from '../../../store/types';
-import { enrollmentsApi, Enrollment } from '../../../api/enrollments';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`enrollment-tabpanel-${index}`}
-      aria-labelledby={`enrollment-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ py: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
+  Divider
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { User } from "../../../store/types";
+import { enrollmentsApi, Enrollment, Course } from "../../../api/enrollments";
 
 interface EnrollmentDialogProps {
   open: boolean;
@@ -57,16 +31,14 @@ interface EnrollmentDialogProps {
 const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
   open,
   onClose,
-  user
+  user,
 }) => {
-  const [activeTab, setActiveTab] = useState(0);
   const [issuingCertificate, setIssuingCertificate] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [enrolling, setEnrolling] = useState(false);
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
-  const activeEnrollmentColumns: GridColDef[] = [
+  const enrollmentColumns: GridColDef[] = [
     { 
       field: 'courseName', 
       headerName: 'Course', 
@@ -146,104 +118,71 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
     }
   ];
 
-  const historyColumns: GridColDef[] = [
-    { 
-      field: 'courseName', 
-      headerName: 'Course', 
-      flex: 1,
-      minWidth: 200
-    },
-    { 
-      field: 'completedDate', 
-      headerName: 'Completed On', 
-      width: 150,
-      valueFormatter: (params: { value: string }) => {
-        return new Date(params.value).toLocaleDateString();
-      }
-    },
-    {
-      field: 'score',
-      headerName: 'Score',
-      width: 120,
-      renderCell: (params) => (
-        <Typography color={params.value >= 70 ? 'success.main' : 'error.main'}>
-          {params.value}%
-        </Typography>
-      )
-    },
-    {
-      field: 'certificate',
-      headerName: 'Certificate',
-      width: 150,
-      renderCell: (params) => (
-        <Chip 
-          label={params.value ? 'Issued' : 'Not Issued'} 
-          color={params.value ? 'success' : 'default'} 
-          size="small" 
-        />
-      )
-    }
-  ];
 
-  const [activeEnrollments, setActiveEnrollments] = useState<Enrollment[]>([]);
-  const [enrollmentHistory, setEnrollmentHistory] = useState<Enrollment[]>([]);
-  const [stats, setStats] = useState<{
-    totalEnrollments: number;
-    completedCourses: number;
-    averageProgress: number;
-    averageScore: number;
-  } | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user && open) {
-      const fetchData = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const [activeRes, historyRes, statsRes] = await Promise.all([
-            enrollmentsApi.getActiveEnrollments(user.id),
-            enrollmentsApi.getEnrollmentHistory(user.id),
-            enrollmentsApi.getEnrollmentStats(user.id)
-          ]);
+    if (!user || !open) return;
 
-          setActiveEnrollments(activeRes.data.data);
-          setEnrollmentHistory(historyRes.data.data);
-          setStats(statsRes.data);
-        } catch (error: any) {
-          console.error('Error fetching enrollments:', error);
-          setError(error.message || 'Failed to fetch enrollment data');
-        } finally {
-          setIsLoading(false);
-        }
-      };
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [enrollmentsRes, coursesRes] = await Promise.all([
+          enrollmentsApi.getActiveEnrollments(user.id),
+          enrollmentsApi.getAvailableCourses()
+        ]);
+        setEnrollments(enrollmentsRes.data.data);
+        setAvailableCourses(coursesRes.data.data);
+      } catch (error: any) {
+        console.error('Error fetching data:', error);
+        setError(error.message || 'Failed to fetch data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      fetchData();
-    }
+    fetchData();
   }, [user, open]);
 
+  const handleEnrollUser = async () => {
+    if (!user || !selectedCourse) return;
+
+    setEnrolling(true);
+    try {
+      await enrollmentsApi.enrollUserInCourse(user.id, selectedCourse);
+      const response = await enrollmentsApi.getActiveEnrollments(user.id);
+      setEnrollments(response.data.data);
+      setSelectedCourse("");
+      setError(null);
+    } catch (error: any) {
+      console.error("Error enrolling user:", error);
+      setError(error.message || "Failed to enroll user in course");
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
   const handleIssueCertificate = async (enrollmentId: string) => {
+    if (!user) return;
+    
     setIssuingCertificate(enrollmentId);
     try {
       await enrollmentsApi.issueCertificate(enrollmentId);
-      // Refresh active enrollments
-      if (user) {
-        const response = await enrollmentsApi.getActiveEnrollments(user.id);
-        setActiveEnrollments(response.data.data);
-      }
+      const response = await enrollmentsApi.getActiveEnrollments(user.id);
+      setEnrollments(response.data.data);
       setError(null);
     } catch (error: any) {
-      console.error('Error issuing certificate:', error);
-      setError(error.message || 'Failed to issue certificate');
+      console.error("Error issuing certificate:", error);
+      setError(error.message || "Failed to issue certificate");
     } finally {
       setIssuingCertificate(null);
     }
   };
 
-  if (!user) return null;
-
-  return (
+  return !user ? null : (
     <Dialog
       fullWidth
       maxWidth="lg"
@@ -262,132 +201,74 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
       </DialogTitle>
 
       <DialogContent>
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange}
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
-        >
-          <Tab label="Active Enrollments" />
-          <Tab label="Enrollment History" />
-          <Tab label="Analytics" />
-        </Tabs>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-        <TabPanel value={activeTab} index={0}>
-          {error ? (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          ) : isLoading ? (
-            <Box sx={{ p: 2 }}>
-              {[...Array(3)].map((_, index) => (
-                <Box key={index} sx={{ mb: 2 }}>
-                  <Skeleton variant="rectangular" height={40} />
-                </Box>
-              ))}
-            </Box>
-          ) : (
-            <DataGrid
-              rows={activeEnrollments}
-              columns={activeEnrollmentColumns}
-              autoHeight
-              disableRowSelectionOnClick
-              pageSizeOptions={[5, 10, 25]}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: 5 }
-                }
-              }}
-            />
-          )}
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={1}>
-          {error ? (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          ) : isLoading ? (
-            <Box sx={{ p: 2 }}>
-              {[...Array(3)].map((_, index) => (
-                <Box key={index} sx={{ mb: 2 }}>
-                  <Skeleton variant="rectangular" height={40} />
-                </Box>
-              ))}
-            </Box>
-          ) : (
-            <DataGrid
-              rows={enrollmentHistory}
-              columns={historyColumns}
-              autoHeight
-              disableRowSelectionOnClick
-              pageSizeOptions={[5, 10, 25]}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: 5 }
-                }
-              }}
-            />
-          )}
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={2}>
-          {error ? (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          ) : isLoading ? (
-            <Box sx={{ p: 2 }}>
-              <Skeleton variant="rectangular" height={200} />
-            </Box>
-          ) : stats ? (
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Total Enrollments
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats.totalEnrollments}
-                  </Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Completed Courses
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats.completedCourses}
-                  </Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Average Progress
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats.averageProgress}%
-                  </Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Average Score
-                  </Typography>
-                  <Typography variant="h4" color={stats.averageScore >= 70 ? 'success.main' : 'error.main'}>
-                    {stats.averageScore}%
-                  </Typography>
-                </Paper>
-              </Grid>
-            </Grid>
-          ) : (
-            <Typography>
-              No analytics data available
+        <Stack spacing={3}>
+          {/* Enroll in Course Section */}
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Enroll in Course
             </Typography>
-          )}
-        </TabPanel>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                select
+                label="Select Course"
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                sx={{ minWidth: 300 }}
+              >
+              {availableCourses.map((course) => (
+                <MenuItem key={course.id} value={course.id}>
+                  {course.name}
+                </MenuItem>
+              ))}
+              </TextField>
+              <Button
+                variant="contained"
+                startIcon={enrolling ? <CircularProgress size={20} /> : <AddIcon />}
+                onClick={handleEnrollUser}
+                disabled={!selectedCourse || enrolling}
+              >
+                {enrolling ? "Enrolling..." : "Enroll"}
+              </Button>
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Current Enrollments Section */}
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Current Enrollments
+            </Typography>
+            {isLoading ? (
+              <Box sx={{ p: 2 }}>
+                {[...Array(3)].map((_, index) => (
+                  <Box key={index} sx={{ mb: 2 }}>
+                    <Skeleton variant="rectangular" height={40} />
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <DataGrid
+                rows={enrollments}
+                columns={enrollmentColumns}
+                autoHeight
+                disableRowSelectionOnClick
+                pageSizeOptions={[5, 10, 25]}
+                initialState={{
+                  pagination: {
+                    paginationModel: { pageSize: 5 }
+                  }
+                }}
+              />
+            )}
+          </Box>
+        </Stack>
       </DialogContent>
     </Dialog>
   );

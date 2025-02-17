@@ -9,9 +9,15 @@ export interface Enrollment {
   enrollmentDate: string;
   progress: number;
   certificate: boolean;
-  status: 'active' | 'completed' | 'dropped';
+  status: 'ACTIVE' | 'COMPLETED' | 'DROPPED' | 'EXPIRED';
   score?: number;
   completedDate?: string;
+}
+
+export interface Course {
+  id: string;
+  name: string;
+  description: string;
 }
 
 export interface ListResponse {
@@ -19,18 +25,35 @@ export interface ListResponse {
   total: number;
 }
 
+export interface CourseListResponse {
+  data: Course[];
+  total: number;
+}
+
 export const enrollmentsApi = {
+  // Get available courses
+  getAvailableCourses: (): Promise<AxiosResponse<CourseListResponse>> => {
+    return client.get(`/enrollments/admin/courses`);
+  },
+
   // Get active enrollments for a user
   getActiveEnrollments: (userId: string): Promise<AxiosResponse<ListResponse>> => {
-    return client.get(`/enrollments/admin/enrollments`, {
-      params: { userId, status: 'active' }
+    return client.get(`/enrollments/admin/users/${userId}/enrollments`, {
+      params: { status: 'ACTIVE' }
     });
   },
 
   // Get enrollment history for a user
   getEnrollmentHistory: (userId: string): Promise<AxiosResponse<ListResponse>> => {
-    return client.get(`/enrollments/admin/enrollments`, {
-      params: { userId, status: ['completed', 'dropped'] }
+    return client.get(`/enrollments/admin/users/${userId}/enrollments`, {
+      params: { status: 'COMPLETED' }
+    });
+  },
+
+  // Get dropped enrollments for a user
+  getDroppedEnrollments: (userId: string): Promise<AxiosResponse<ListResponse>> => {
+    return client.get(`/enrollments/admin/users/${userId}/enrollments`, {
+      params: { status: 'DROPPED' }
     });
   },
 
@@ -49,5 +72,12 @@ export const enrollmentsApi = {
   // Issue certificate for an enrollment
   issueCertificate: (enrollmentId: string): Promise<AxiosResponse<Enrollment>> => {
     return client.post(`/enrollments/admin/enrollments/${enrollmentId}/certificate`);
+  },
+
+  // Enroll user in a course
+  enrollUserInCourse: (userId: string, courseId: string): Promise<AxiosResponse<Enrollment>> => {
+    return client.post(`/enrollments/admin/users/${userId}/enrollments`, {
+      courseId
+    });
   }
 };

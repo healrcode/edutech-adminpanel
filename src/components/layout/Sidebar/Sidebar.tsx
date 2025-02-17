@@ -12,7 +12,8 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Dashboard as DashboardIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  Analytics as AnalyticsIcon
 } from '@mui/icons-material';
 import { SvgIconComponent } from '@mui/icons-material';
 import SidebarItem from './SidebarItem';
@@ -35,6 +36,11 @@ const navigation: NavItem[] = [
     title: 'User Management',
     path: '/users',
     icon: PeopleIcon
+  },
+  {
+    title: 'Enrollment Analytics',
+    path: '/enrollments',
+    icon: AnalyticsIcon
   }
 ];
 

@@ -11,6 +11,7 @@ import theme from './theme';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import Users from './pages/users/Users';
+import EnrollmentsAnalytics from './pages/enrollments/EnrollmentsAnalytics';
 
 // Route Guards
 import PublicRoute from './components/common/PublicRoute';
@@ -69,6 +70,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
                   <Users />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/enrollments"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                  <EnrollmentsAnalytics />
                 </ProtectedRoute>
               }
             />

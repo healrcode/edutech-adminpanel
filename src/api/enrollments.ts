@@ -57,15 +57,15 @@ export const enrollmentsApi = {
     });
   },
 
-  // Get enrollment stats for a user
-  getEnrollmentStats: (userId: string): Promise<AxiosResponse<{
+  // Get overall enrollment stats
+  getEnrollmentStats: (courseId?: string): Promise<AxiosResponse<{
     totalEnrollments: number;
-    completedCourses: number;
-    averageProgress: number;
-    averageScore: number;
+    activeEnrollments: number;
+    completedEnrollments: number;
+    averageCompletionRate: number;
   }>> => {
     return client.get(`/enrollments/admin/enrollments/stats`, {
-      params: { userId }
+      params: courseId ? { courseId } : undefined
     });
   },
 

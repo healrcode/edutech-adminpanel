@@ -31,6 +31,7 @@ import RoleBadge from './components/RoleBadge';
 import FilterDrawer from './components/FilterDrawer';
 import ActionsDrawer from './components/ActionsDrawer';
 import CreateUserDrawer from './components/CreateUserDrawer';
+import EnrollmentDialog from './components/EnrollmentDialog';
 import { Role, UserStatus } from '../../common/enums';
 
 interface AlertState {
@@ -69,6 +70,7 @@ const Users: React.FC = () => {
   const [isActionsDrawerOpen, setIsActionsDrawerOpen] = useState(false);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isEnrollmentDialogOpen, setIsEnrollmentDialogOpen] = useState(false);
   const [filters, setFilters] = useState<UiFilters>({});
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
@@ -272,6 +274,25 @@ const Users: React.FC = () => {
       )
     },
     {
+      field: 'enrollments',
+      headerName: 'Enrollments',
+      width: 150,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => {
+            setSelectedUser(params.row as User);
+            setIsEnrollmentDialogOpen(true);
+          }}
+        >
+          View Details
+        </Button>
+      ),
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
       width: 100,
@@ -418,6 +439,15 @@ const Users: React.FC = () => {
         onStatusUpdate={handleStatusUpdate}
         onRoleUpdate={handleRoleUpdate}
         onDelete={handleDeleteUser}
+      />
+
+      <EnrollmentDialog
+        open={isEnrollmentDialogOpen}
+        onClose={() => {
+          setIsEnrollmentDialogOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
       />
     </Layout>
   );

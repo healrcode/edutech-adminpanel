@@ -228,7 +228,7 @@ const Users: React.FC = () => {
       <Container maxWidth="xl">
         <Stack spacing={3} sx={{ p: 3 }}>
           <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
               <Typography variant="h4">
                 Users
               </Typography>

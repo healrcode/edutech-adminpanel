@@ -21,13 +21,14 @@ import {
 } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Layout from '../../components/layout/Layout';
 import { usersApi } from '../../api/users';
 import { User } from '../../store/types';
-import UserActions from './components/UserActions';
 import StatusBadge from './components/StatusBadge';
 import RoleBadge from './components/RoleBadge';
 import FilterDrawer from './components/FilterDrawer';
+import ActionsDrawer from './components/ActionsDrawer';
 import { Role, UserStatus } from '../../common/enums';
 
 interface AlertState {
@@ -63,6 +64,8 @@ const Users: React.FC = () => {
   const [pageLoaded, setPageLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [isActionsDrawerOpen, setIsActionsDrawerOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [filters, setFilters] = useState<UiFilters>({});
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
@@ -132,7 +135,7 @@ const Users: React.FC = () => {
     setAlert(prev => ({ ...prev, open: false }));
   };
 
-  const handleStatusUpdate = async (userId: string, newStatus: string) => {
+  const handleStatusUpdate = async (userId: string, newStatus: UserStatus) => {
     try {
       await usersApi.updateStatus(userId, newStatus);
       setPageLoaded(false); // Trigger refetch
@@ -143,7 +146,7 @@ const Users: React.FC = () => {
     }
   };
 
-  const handleRoleUpdate = async (userId: string, newRole: string) => {
+  const handleRoleUpdate = async (userId: string, newRole: Role) => {
     try {
       await usersApi.updateRole(userId, newRole);
       setPageLoaded(false); // Trigger refetch
@@ -173,6 +176,16 @@ const Users: React.FC = () => {
   const handleApplyFilters = (newFilters: UiFilters) => {
     setFilters(newFilters);
     setPageLoaded(false); // Trigger refetch with new filters
+  };
+
+  const handleOpenActions = (user: User) => {
+    setSelectedUser(user);
+    setIsActionsDrawerOpen(true);
+  };
+
+  const handleCloseActions = () => {
+    setIsActionsDrawerOpen(false);
+    setSelectedUser(null);
   };
 
   const columns: GridColDef[] = [
@@ -230,15 +243,17 @@ const Users: React.FC = () => {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 180,
+      width: 100,
       sortable: false,
       filterable: false,
+      align: 'center',
       renderCell: (params) => (
-        <UserActions
-          user={params.row as User}
-          onStatusUpdate={handleStatusUpdate}
-          onRoleUpdate={handleRoleUpdate}
-        />
+        <IconButton
+          onClick={() => handleOpenActions(params.row as User)}
+          size="small"
+        >
+          <MoreVertIcon />
+        </IconButton>
       ),
     },
   ];
@@ -348,6 +363,14 @@ const Users: React.FC = () => {
         filters={filters}
         onApplyFilters={handleApplyFilters}
         activeFilterCount={activeFilterCount}
+      />
+
+      <ActionsDrawer
+        open={isActionsDrawerOpen}
+        onClose={handleCloseActions}
+        user={selectedUser}
+        onStatusUpdate={handleStatusUpdate}
+        onRoleUpdate={handleRoleUpdate}
       />
     </Layout>
   );

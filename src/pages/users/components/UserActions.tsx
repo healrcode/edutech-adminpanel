@@ -11,15 +11,13 @@ import {
   CircularProgress
 } from '@mui/material';
 import { User } from '../../../store/types';
+import { Role, UserStatus } from '../../../common/enums';
 
 interface UserActionsProps {
   user: User;
-  onStatusUpdate: (userId: string, status: string) => void;
-  onRoleUpdate: (userId: string, role: string) => void;
+  onStatusUpdate: (userId: string, status: UserStatus) => void;
+  onRoleUpdate: (userId: string, role: Role) => void;
 }
-
-const STATUSES = ['active', 'inactive', 'suspended'];
-const ROLES = ['student', 'instructor', 'admin'];
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -84,7 +82,7 @@ const UserActions: React.FC<UserActionsProps> = ({
     setMenuType(null);
   };
 
-  const handleStatusSelect = async (status: string) => {
+  const handleStatusSelect = async (status: UserStatus) => {
     handleClose();
     setConfirmDialog({
       open: true,
@@ -104,7 +102,7 @@ const UserActions: React.FC<UserActionsProps> = ({
     });
   };
 
-  const handleRoleSelect = async (role: string) => {
+  const handleRoleSelect = async (role: Role) => {
     handleClose();
     setConfirmDialog({
       open: true,
@@ -160,23 +158,23 @@ const UserActions: React.FC<UserActionsProps> = ({
         open={Boolean(anchorEl)}
         onClose={handleClose}
       >
-        {menuType === 'status' && STATUSES.map((status) => (
+        {menuType === 'status' && Object.values(UserStatus).map((status) => (
           <MenuItem
             key={status}
             onClick={() => handleStatusSelect(status)}
             selected={user.status === status}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {status}
           </MenuItem>
         ))}
         
-        {menuType === 'role' && ROLES.map((role) => (
+        {menuType === 'role' && Object.values(Role).map((role) => (
           <MenuItem
             key={role}
             onClick={() => handleRoleSelect(role)}
             selected={user.role === role}
           >
-            {role.charAt(0).toUpperCase() + role.slice(1)}
+            {role}
           </MenuItem>
         ))}
       </Menu>

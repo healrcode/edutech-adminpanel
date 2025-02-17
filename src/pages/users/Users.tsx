@@ -36,7 +36,12 @@ interface AlertState {
   severity: 'success' | 'error';
 }
 
-interface Filters {
+interface ApiFilters {
+  role?: string;
+  status?: string;
+}
+
+interface UiFilters {
   role?: Role;
   status?: UserStatus;
 }
@@ -58,18 +63,26 @@ const Users: React.FC = () => {
   const [pageLoaded, setPageLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-  const [filters, setFilters] = useState<Filters>({});
+  const [filters, setFilters] = useState<UiFilters>({});
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
+
+  const getApiFilters = (uiFilters: UiFilters): ApiFilters => {
+    return {
+      role: uiFilters.role,
+      status: uiFilters.status
+    };
+  };
 
   const fetchUsers = useCallback(async (search?: string) => {
     if (!pageLoaded || search !== undefined) {
       try {
+        const apiFilters = getApiFilters(filters);
         console.log('[Users] Fetching users:', {
           page: paginationModel.page + 1,
           pageSize: paginationModel.pageSize,
           search: search || searchQuery,
-          filters,
+          filters: apiFilters,
           hasToken: !!localStorage.getItem('accessToken')
         });
         setError(null);
@@ -78,8 +91,7 @@ const Users: React.FC = () => {
           page: paginationModel.page + 1,
           pageSize: paginationModel.pageSize,
           search: search || searchQuery,
-          role: filters.role,
-          status: filters.status
+          ...apiFilters
         });
         console.log('[Users] Users fetched successfully:', {
           count: response.data?.length || 0,
@@ -158,7 +170,7 @@ const Users: React.FC = () => {
     }
   };
 
-  const handleApplyFilters = (newFilters: Filters) => {
+  const handleApplyFilters = (newFilters: UiFilters) => {
     setFilters(newFilters);
     setPageLoaded(false); // Trigger refetch with new filters
   };

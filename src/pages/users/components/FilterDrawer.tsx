@@ -88,7 +88,10 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({
               id="role-filter"
               value={localFilters.role || ''}
               label="Role"
-              onChange={(e) => setLocalFilters({ ...localFilters, role: e.target.value as Role || undefined })}
+              onChange={(e) => setLocalFilters({ 
+                ...localFilters, 
+                role: e.target.value as Role || undefined 
+              })}
             >
               <MenuItem value="">All</MenuItem>
               {Object.values(Role).map((role) => (
@@ -106,7 +109,10 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({
               id="status-filter"
               value={localFilters.status || ''}
               label="Status"
-              onChange={(e) => setLocalFilters({ ...localFilters, status: e.target.value as UserStatus || undefined })}
+              onChange={(e) => setLocalFilters({ 
+                ...localFilters, 
+                status: e.target.value as UserStatus || undefined 
+              })}
             >
               <MenuItem value="">All</MenuItem>
               {Object.values(UserStatus).map((status) => (

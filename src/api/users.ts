@@ -41,5 +41,22 @@ export const usersApi = {
   // Get current user profile
   me: async (): Promise<User> => {
     return api.get('/users/me');
+  },
+
+  // Create new user
+  create: async (data: {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    role: string;
+    status: string;
+  }): Promise<User> => {
+    const response = await api.post('/admin/users', data);
+    return response.data;
+  },
+
+  // Delete user
+  delete: async (userId: string): Promise<void> => {
+    await api.delete(`/admin/users/${userId}`);
   }
 };

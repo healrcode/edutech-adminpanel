@@ -21,6 +21,7 @@ import {
 } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Layout from '../../components/layout/Layout';
 import { usersApi } from '../../api/users';
@@ -29,6 +30,7 @@ import StatusBadge from './components/StatusBadge';
 import RoleBadge from './components/RoleBadge';
 import FilterDrawer from './components/FilterDrawer';
 import ActionsDrawer from './components/ActionsDrawer';
+import CreateUserDrawer from './components/CreateUserDrawer';
 import { Role, UserStatus } from '../../common/enums';
 
 interface AlertState {
@@ -65,6 +67,7 @@ const Users: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [isActionsDrawerOpen, setIsActionsDrawerOpen] = useState(false);
+  const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [filters, setFilters] = useState<UiFilters>({});
 
@@ -154,6 +157,34 @@ const Users: React.FC = () => {
     } catch (error: any) {
       console.error('Error updating user role:', error);
       showAlert(error.message || 'Failed to update user role', 'error');
+    }
+  };
+
+  const handleCreateUser = async (data: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: Role;
+    status: UserStatus;
+  }) => {
+    try {
+      await usersApi.create(data);
+      setPageLoaded(false); // Trigger refetch
+      showAlert('User created successfully', 'success');
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      showAlert(error.message || 'Failed to create user', 'error');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await usersApi.delete(userId);
+      setPageLoaded(false); // Trigger refetch
+      showAlert('User deleted successfully', 'success');
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      showAlert(error.message || 'Failed to delete user', 'error');
     }
   };
 
@@ -303,17 +334,26 @@ const Users: React.FC = () => {
                 }}
                 sx={{ width: 300 }}
               />
-              <Button
-                variant="outlined"
-                startIcon={
-                  <Badge badgeContent={activeFilterCount} color="primary">
-                    <FilterListIcon />
-                  </Badge>
-                }
-                onClick={() => setIsFilterDrawerOpen(true)}
-              >
-                Filters
-              </Button>
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={
+                    <Badge badgeContent={activeFilterCount} color="primary">
+                      <FilterListIcon />
+                    </Badge>
+                  }
+                  onClick={() => setIsFilterDrawerOpen(true)}
+                >
+                  Filters
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setIsCreateDrawerOpen(true)}
+                >
+                  Create User
+                </Button>
+              </Stack>
             </Box>
 
             {error && (
@@ -365,12 +405,19 @@ const Users: React.FC = () => {
         activeFilterCount={activeFilterCount}
       />
 
+      <CreateUserDrawer
+        open={isCreateDrawerOpen}
+        onClose={() => setIsCreateDrawerOpen(false)}
+        onCreateUser={handleCreateUser}
+      />
+
       <ActionsDrawer
         open={isActionsDrawerOpen}
         onClose={handleCloseActions}
         user={selectedUser}
         onStatusUpdate={handleStatusUpdate}
         onRoleUpdate={handleRoleUpdate}
+        onDelete={handleDeleteUser}
       />
     </Layout>
   );

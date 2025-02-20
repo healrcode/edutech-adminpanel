@@ -1,6 +1,7 @@
 import api from './client';
 import type { User } from '../store/types';
 import type { ApiResponse } from './types';
+
 interface AuthResponse {
   user: User;
   accessToken: string;
@@ -24,27 +25,32 @@ interface TokenResponse {
 export const authApi = {
   // Refresh token
   refreshToken: async (refreshToken: string): Promise<TokenResponse> => {
-    return api.post('/auth/refresh', { refreshToken });
+    const response = await api.post('/auth/refresh', { refreshToken });
+    return response.data;
   },
 
   // Get current user
   me: async (): Promise<User> => {
-    return api.get('/auth/me');
+    const response = await api.get('/auth/me');
+    return response.data;
   },
 
   // Send OTP to email
-  sendOTP: async (email: string): Promise<void> => {
-    await api.post('/auth/email/otp', { email });
+  sendOTP: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post('/auth/email/otp', { email });
+    return response.data;
   },
 
   // Verify OTP and get tokens
   verifyOTP: async (data: OtpVerifyRequest): Promise<AuthResponse> => {
-    return api.post('/auth/email/verify', data);
+    const response = await api.post('/auth/email/verify', data);
+    return response.data;
   },
 
   // Firebase authentication
   firebaseAuth: async (data: FirebaseAuthRequest): Promise<AuthResponse> => {
-    return api.post('/auth/firebase', data);
+    const response = await api.post('/auth/firebase', data);
+    return response.data;
   },
 
   // Logout

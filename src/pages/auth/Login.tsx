@@ -93,12 +93,10 @@ const Login: React.FC = () => {
     try {
       console.log('Login: Sending OTP for:', otpFlow.email);
       setError(null);
-      const success = await loginWithOtp(otpFlow.email);
-      console.log('Login: OTP send result:', success);
+      const response = await loginWithOtp(otpFlow.email);
+      console.log('Login: OTP send result:', response.message);
       
-      if (success) {
-        setError('OTP sent successfully! For testing, use: 123456');
-      }
+      setError(response.message + ' (For testing, use: 123456)');
     } catch (err) {
       console.log('Login: Error sending OTP:', err);
       setError('Failed to send OTP. Please try again.');

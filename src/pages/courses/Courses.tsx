@@ -38,9 +38,10 @@ export default function Courses() {
     const loadCourses = async () => {
         try {
             const data = await courseApi.getAllCourses();
-            setCourses(data);
+            setCourses(data || []);
         } catch (error) {
             console.error('Failed to load courses:', error);
+            setCourses([]); // Set empty array on error
             // TODO: Show error snackbar
         } finally {
             setLoading(false);

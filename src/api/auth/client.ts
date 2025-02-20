@@ -1,4 +1,5 @@
 import { ApiClient } from '../base';
+import { setAuthToken } from '../client';
 import {
   AuthResponse,
   FirebaseAuthRequest,
@@ -19,14 +20,14 @@ class AuthClient extends ApiClient {
    * Authenticate with Firebase
    */
   async firebaseAuth(data: FirebaseAuthRequest): Promise<AuthResponse> {
-    const response = await this.post<AuthResponse>('/auth/firebase', data);
+    const authResponse = await this.post<AuthResponse>('/auth/firebase', data);
     
     // Store tokens and set auth header
-    localStorage.setItem('accessToken', response.accessToken);
-    localStorage.setItem('refreshToken', response.refreshToken);
-    this.setAuthToken(response.accessToken);
+    localStorage.setItem('accessToken', authResponse.accessToken);
+    localStorage.setItem('refreshToken', authResponse.refreshToken);
+    setAuthToken(authResponse.accessToken);
 
-    return response;
+    return authResponse;
   }
 
   /**
@@ -60,7 +61,7 @@ class AuthClient extends ApiClient {
       // Clear tokens and auth header regardless of API call success
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      this.setAuthToken(null);
+      setAuthToken(null);
     }
   }
 }

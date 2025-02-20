@@ -1,5 +1,7 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
+import api from './client';
 import { AuthTokens } from './auth/types';
+import { ApiResponse } from './types';
 
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
@@ -8,53 +10,7 @@ export class ApiClient {
   private refreshPromise: Promise<AuthTokens> | null = null;
 
   constructor() {
-    console.log('[API] Initializing with base URL:', BASE_URL);
-    this.client = axios.create({
-      baseURL: BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    this.setupInterceptors();
-  }
-
-  public setAuthToken(token: string | null) {
-    if (token) {
-      this.client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete this.client.defaults.headers.common['Authorization'];
-    }
-  }
-
-  private setupInterceptors() {
-    // Request Interceptor
-    // Define public auth endpoints that don't need token
-    const publicAuthEndpoints = [
-      '/auth/email/otp',
-      '/auth/email/verify',
-      '/auth/firebase'
-    ];
-
-    this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        // Log the full URL being requested
-        const baseUrl = config.baseURL || '';
-        const url = config.url || '';
-        console.log('[API] Making request to:', `${baseUrl}${url}`);
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Response Interceptor
-    this.client.interceptors.response.use(
-      (response) => response,
-      (error: AxiosError) => {
-        // Just return the error without attempting refresh
-        return Promise.reject(this.handleError(error));
-      }
-    );
+    this.client = api;
   }
 
 
@@ -86,32 +42,32 @@ export class ApiClient {
     };
   }
 
-  protected async get<T>(url: string) {
+  private isApiResponse<T>(data: any): data is ApiResponse<T> {
+    return data && typeof data === 'object' && 'success' in data && 'data' in data;
+  }
+
+  protected async get<T>(url: string, config?: any): Promise<T> {
     console.log('[API] GET request to:', BASE_URL + url);
-    const response = await this.client.get<{ success: boolean; data: T }>(url);
-    console.log('[API] Response data:', response.data);
-    return response.data.data;
+    const response = await this.client.get<T | ApiResponse<T>>(url, config);
+    return this.isApiResponse<T>(response.data) ? response.data.data : response.data;
   }
 
-  protected async post<T>(url: string, data?: any) {
+  protected async post<T>(url: string, data?: any, config?: any): Promise<T> {
     console.log('[API] POST request to:', BASE_URL + url, 'with data:', data);
-    const response = await this.client.post<{ success: boolean; data: T }>(url, data);
-    console.log('[API] Response data:', response.data);
-    return response.data.data;
+    const response = await this.client.post<T | ApiResponse<T>>(url, data, config);
+    return this.isApiResponse<T>(response.data) ? response.data.data : response.data;
   }
 
-  protected async put<T>(url: string, data?: any) {
+  protected async put<T>(url: string, data?: any, config?: any): Promise<T> {
     console.log('[API] PUT request to:', BASE_URL + url, 'with data:', data);
-    const response = await this.client.put<{ success: boolean; data: T }>(url, data);
-    console.log('[API] Response data:', response.data);
-    return response.data.data;
+    const response = await this.client.put<T | ApiResponse<T>>(url, data, config);
+    return this.isApiResponse<T>(response.data) ? response.data.data : response.data;
   }
 
-  protected async delete<T>(url: string) {
+  protected async delete<T>(url: string, config?: any): Promise<T> {
     console.log('[API] DELETE request to:', BASE_URL + url);
-    const response = await this.client.delete<{ success: boolean; data: T }>(url);
-    console.log('[API] Response data:', response.data);
-    return response.data.data;
+    const response = await this.client.delete<T | ApiResponse<T>>(url, config);
+    return this.isApiResponse<T>(response.data) ? response.data.data : response.data;
   }
 }
 

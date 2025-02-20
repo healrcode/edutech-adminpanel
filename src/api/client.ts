@@ -55,21 +55,33 @@ api.interceptors.response.use(
     // Handle both wrapped and unwrapped responses
     if (response.data && typeof response.data === 'object' && 'success' in response.data) {
       const apiResponse = response.data as ApiResponse<T>;
+      console.log('[API] Response interceptor:', {
+        success: apiResponse.success,
+        hasData: !!apiResponse.data,
+        isPaginated: Array.isArray(apiResponse.data) && 'total' in apiResponse
+      });
       if (!apiResponse.success) {
         throw new Error(apiResponse.error?.message || 'API request failed');
       }
       // Return full response for paginated data
       if (Array.isArray(apiResponse.data) && 'total' in apiResponse) {
         return {
-          data: apiResponse.data,
-          total: apiResponse.total,
-          page: apiResponse.page,
-          pageSize: apiResponse.pageSize
-        } as PaginatedResponse<T>;
+          ...response,
+          data: {
+            data: apiResponse.data,
+            total: apiResponse.total,
+            page: apiResponse.page,
+            pageSize: apiResponse.pageSize
+          } as PaginatedResponse<T>
+        };
       }
-      return apiResponse.data;
+      return {
+        ...response,
+        data: apiResponse.data
+      };
     }
-    return response.data as T;
+    console.log('[API] Response is not wrapped:', response.data);
+    return response;
   },
   async (error: AxiosError<ApiResponse<any>>) => {
     const originalRequest = error.config;
@@ -169,7 +181,7 @@ api.interceptors.response.use(
 );
 
 // Helper to set auth token (used after login/token refresh)
-export const setAuthToken = (token: string | null) => {
+const setAuthToken = (token: string | null) => {
   if (token) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
@@ -177,4 +189,5 @@ export const setAuthToken = (token: string | null) => {
   }
 };
 
-export default api;
+// Export the configured instance and token setter
+export { api as default, setAuthToken };

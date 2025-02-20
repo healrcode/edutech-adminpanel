@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   loginWithFirebase: (token: string) => Promise<void>;
-  loginWithOtp: (email: string) => Promise<boolean>;
+  loginWithOtp: (email: string) => Promise<{ message: string }>;
   verifyOtp: (otp: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -112,10 +112,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithOtp = async (email: string) => {
     console.log('[Auth] Starting loginWithOtp:', { email });
     try {
-      await authApi.sendOTP(email);
+      const response = await authApi.sendOTP(email);
       store.setOtpFlowState(email, true);
       console.log('[Auth] OTP sent successfully');
-      return true;
+      return response;
     } catch (error) {
       console.error('[Auth] OTP send error:', error);
       store.clearOtpFlow();
@@ -148,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('refreshToken', response.refreshToken);
       store.setTokens(response.accessToken, response.refreshToken);
       store.setUser(response.user);
+      store.clearOtpFlow(); // Clear OTP flow after successful verification
       
       console.log('[Auth] Auth successful:', {
         user: response.user.email,

@@ -130,14 +130,14 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
       setIsLoading(true);
       setError(null);
       try {
-        const [enrollmentsRes, coursesRes] = await Promise.all([
+        const [enrollments, courses] = await Promise.all([
           enrollmentsApi.getActiveEnrollments(user.id),
           enrollmentsApi.getAvailableCourses()
         ]);
         
         // Add null checks and default to empty arrays
-        setEnrollments(enrollmentsRes?.data?.data || []);
-        setAvailableCourses(coursesRes?.data?.data || []);
+        setEnrollments(enrollments?.data || []);
+        setAvailableCourses(courses?.data || []);
       } catch (error: any) {
         console.error('Error fetching data:', error);
         setError(error.message || 'Failed to fetch data');
@@ -155,8 +155,8 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
     setEnrolling(true);
     try {
       await enrollmentsApi.enrollUserInCourse(user.id, selectedCourse);
-      const response = await enrollmentsApi.getActiveEnrollments(user.id);
-      setEnrollments(response?.data?.data || []);
+      const enrollments = await enrollmentsApi.getActiveEnrollments(user.id);
+      setEnrollments(enrollments?.data || []);
       setSelectedCourse("");
       setError(null);
     } catch (error: any) {
@@ -173,8 +173,8 @@ const EnrollmentDialog: React.FC<EnrollmentDialogProps> = ({
     setIssuingCertificate(enrollmentId);
     try {
       await enrollmentsApi.issueCertificate(enrollmentId);
-      const response = await enrollmentsApi.getActiveEnrollments(user.id);
-      setEnrollments(response?.data?.data || []);
+      const enrollments = await enrollmentsApi.getActiveEnrollments(user.id);
+      setEnrollments(enrollments?.data || []);
       setError(null);
     } catch (error: any) {
       console.error("Error issuing certificate:", error);

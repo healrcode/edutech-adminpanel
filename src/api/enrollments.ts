@@ -1,5 +1,5 @@
-import { AxiosResponse } from 'axios';
-import client from './client';
+import { ApiClient } from './base';
+import type { PaginatedResponse } from './types';
 
 export interface Enrollment {
   id: string;
@@ -20,64 +20,62 @@ export interface Course {
   description: string;
 }
 
-export interface ListResponse {
-  data: Enrollment[];
-  total: number;
+export interface EnrollmentStats {
+  totalEnrollments: number;
+  activeEnrollments: number;
+  completedEnrollments: number;
+  averageCompletionRate: number;
 }
 
-export interface CourseListResponse {
-  data: Course[];
-  total: number;
-}
+export class EnrollmentsApi extends ApiClient {
+  constructor() {
+    super();
+  }
 
-export const enrollmentsApi = {
   // Get available courses
-  getAvailableCourses: (): Promise<AxiosResponse<CourseListResponse>> => {
-    return client.get(`/enrollments/admin/courses`);
-  },
+  async getAvailableCourses(): Promise<PaginatedResponse<Course>> {
+    return this.get<PaginatedResponse<Course>>('/enrollments/admin/courses');
+  }
 
   // Get active enrollments for a user
-  getActiveEnrollments: (userId: string): Promise<AxiosResponse<ListResponse>> => {
-    return client.get(`/enrollments/admin/users/${userId}/enrollments`, {
+  async getActiveEnrollments(userId: string): Promise<PaginatedResponse<Enrollment>> {
+    return this.get<PaginatedResponse<Enrollment>>(`/enrollments/admin/users/${userId}/enrollments`, {
       params: { status: 'ACTIVE' }
     });
-  },
+  }
 
   // Get enrollment history for a user
-  getEnrollmentHistory: (userId: string): Promise<AxiosResponse<ListResponse>> => {
-    return client.get(`/enrollments/admin/users/${userId}/enrollments`, {
+  async getEnrollmentHistory(userId: string): Promise<PaginatedResponse<Enrollment>> {
+    return this.get<PaginatedResponse<Enrollment>>(`/enrollments/admin/users/${userId}/enrollments`, {
       params: { status: 'COMPLETED' }
     });
-  },
+  }
 
   // Get dropped enrollments for a user
-  getDroppedEnrollments: (userId: string): Promise<AxiosResponse<ListResponse>> => {
-    return client.get(`/enrollments/admin/users/${userId}/enrollments`, {
+  async getDroppedEnrollments(userId: string): Promise<PaginatedResponse<Enrollment>> {
+    return this.get<PaginatedResponse<Enrollment>>(`/enrollments/admin/users/${userId}/enrollments`, {
       params: { status: 'DROPPED' }
     });
-  },
+  }
 
   // Get overall enrollment stats
-  getEnrollmentStats: (courseId?: string): Promise<AxiosResponse<{
-    totalEnrollments: number;
-    activeEnrollments: number;
-    completedEnrollments: number;
-    averageCompletionRate: number;
-  }>> => {
-    return client.get(`/enrollments/admin/enrollments/stats`, {
+  async getEnrollmentStats(courseId?: string): Promise<EnrollmentStats> {
+    return this.get<EnrollmentStats>('/enrollments/admin/enrollments/stats', {
       params: courseId ? { courseId } : undefined
     });
-  },
+  }
 
   // Issue certificate for an enrollment
-  issueCertificate: (enrollmentId: string): Promise<AxiosResponse<Enrollment>> => {
-    return client.post(`/enrollments/admin/enrollments/${enrollmentId}/certificate`);
-  },
+  async issueCertificate(enrollmentId: string): Promise<Enrollment> {
+    return this.post<Enrollment>(`/enrollments/admin/enrollments/${enrollmentId}/certificate`);
+  }
 
   // Enroll user in a course
-  enrollUserInCourse: (userId: string, courseId: string): Promise<AxiosResponse<Enrollment>> => {
-    return client.post(`/enrollments/admin/users/${userId}/enrollments`, {
+  async enrollUserInCourse(userId: string, courseId: string): Promise<Enrollment> {
+    return this.post<Enrollment>(`/enrollments/admin/users/${userId}/enrollments`, {
       courseId
     });
   }
-};
+}
+
+export const enrollmentsApi = new EnrollmentsApi();

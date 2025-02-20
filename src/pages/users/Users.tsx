@@ -170,7 +170,7 @@ const Users: React.FC = () => {
     status: UserStatus;
   }) => {
     try {
-      await usersApi.create(data);
+      await usersApi.createUser(data);
       setPageLoaded(false); // Trigger refetch
       showAlert('User created successfully', 'success');
     } catch (error: any) {
@@ -181,7 +181,7 @@ const Users: React.FC = () => {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      await usersApi.delete(userId);
+      await usersApi.deleteUser(userId);
       setPageLoaded(false); // Trigger refetch
       showAlert('User deleted successfully', 'success');
     } catch (error: any) {

@@ -27,8 +27,8 @@ const EnrollmentsAnalytics: React.FC = () => {
     const fetchStats = async () => {
       try {
         // Get overall stats without any filters
-        const response = await enrollmentsApi.getEnrollmentStats();
-        setStats(response.data);
+        const stats = await enrollmentsApi.getEnrollmentStats();
+        setStats(stats);
         setError(null);
       } catch (err: any) {
         console.error('Error fetching enrollment stats:', err);

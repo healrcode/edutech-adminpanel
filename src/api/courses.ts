@@ -21,15 +21,25 @@ export interface Course {
         position: number;
         isOptional: boolean;
         isFree: boolean;
-        modules: {
-            id: string;
-            title: string;
-            type: ModuleType;
-            description?: string;
-            duration?: number;
-            position: number;
-            isRequired: boolean;
-        }[];
+            modules: {
+                id: string;
+                title: string;
+                type: ModuleType;
+                description?: string;
+                duration?: number;
+                position: number;
+                isRequired: boolean;
+                content: {
+                    videoUrl?: string;
+                    text?: string;
+                    questions?: {
+                        question: string;
+                        options: string[];
+                        correctOption: number;
+                        explanation?: string;
+                    }[];
+                };
+            }[];
     }[];
 }
 

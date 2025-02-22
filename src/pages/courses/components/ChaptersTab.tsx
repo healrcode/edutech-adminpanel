@@ -41,6 +41,25 @@ interface Module {
     duration?: number;
     position: number;
     isRequired: boolean;
+    content: {
+        videoUrl?: string;
+        text?: string;
+        questions?: {
+            question: string;
+            options: string[];
+            correctOption: number;
+        }[];
+    };
+}
+
+interface ModuleContent {
+    videoUrl?: string;
+    text?: string;
+    questions?: {
+        question: string;
+        options: string[];
+        correctOption: number;
+    }[];
 }
 
 interface ChapterFormData {
@@ -54,7 +73,7 @@ interface ModuleFormData {
     title: string;
     description?: string;
     type: ModuleType;
-    content: any;
+    content: ModuleContent;
     duration?: number;
     isRequired: boolean;
 }
@@ -192,8 +211,12 @@ export default function ChaptersTab({
                                             size="small"
                                             startIcon={<AddIcon />}
                                             onClick={() => {
+                                                setChapterFormOpen(false); // Close chapter form first
+                                                setSelectedModule(null); // Clear any selected module
                                                 setSelectedChapterId(chapter.id);
-                                                setModuleFormOpen(true);
+                                                setTimeout(() => {
+                                                    setModuleFormOpen(true);
+                                                }, 0);
                                             }}
                                         >
                                             Add Module
@@ -245,17 +268,36 @@ export default function ChaptersTab({
                                                 <Box>
                                                     <IconButton
                                                         size="small"
-                                                        onClick={() => {
-                                            setSelectedModule(module);
-                                            setSelectedChapterId(chapter.id);
-                                            setModuleFormOpen(true);
-                                        }}
-                                    >
-                                        <EditIcon />
-                                    </IconButton>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => onDeleteModule(module.id, chapter.id)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setChapterFormOpen(false); // Close chapter form first
+                                                            setSelectedModule(module);
+                                                            setSelectedChapterId(chapter.id);
+                                                            setTimeout(() => {
+                                                                setModuleFormOpen(true);
+                                                            }, 0);
+                                                        }}
+                                                        sx={{ 
+                                                            color: 'primary.main',
+                                                            '&:hover': {
+                                                                backgroundColor: 'primary.light'
+                                                            }
+                                                        }}
+                                                    >
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDeleteModule(module.id, chapter.id);
+                                                        }}
+                                                        sx={{ 
+                                                            color: 'error.main',
+                                                            '&:hover': {
+                                                                backgroundColor: 'error.light'
+                                                            }
+                                                        }}
                                                     >
                                                         <DeleteIcon />
                                                     </IconButton>
@@ -335,7 +377,7 @@ export default function ChaptersTab({
                     title: selectedModule.title,
                     description: selectedModule.description,
                     type: selectedModule.type,
-                    content: {}, // Will be populated based on type
+                    content: selectedModule.content,
                     duration: selectedModule.duration,
                     isRequired: selectedModule.isRequired
                 } : undefined}

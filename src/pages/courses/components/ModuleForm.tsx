@@ -28,6 +28,7 @@ interface ModuleFormData {
             question: string;
             options: string[];
             correctOption: number;
+            explanation?: string;
         }[];
     };
     duration?: number;
@@ -59,15 +60,99 @@ export default function ModuleForm({
     initialData,
     title = 'Add Module',
 }: ModuleFormProps) {
-    const [formData, setFormData] = useState<ModuleFormData>(
-        initialData || defaultData
-    );
+    const [formData, setFormData] = useState<ModuleFormData>(() => {
+        if (!initialData) return defaultData;
+
+        // Initialize with proper content structure based on type
+        let content = {};
+        if (initialData.content) {
+            switch (initialData.type) {
+                case ModuleType.TEXT:
+                    content = { text: initialData.content.text || '' };
+                    break;
+                case ModuleType.VIDEO:
+                    content = { videoUrl: initialData.content.videoUrl || '' };
+                    break;
+                case ModuleType.QUIZ:
+                    content = { questions: initialData.content.questions || [] };
+                    break;
+            }
+        } else {
+            switch (initialData.type) {
+                case ModuleType.TEXT:
+                    content = { text: '' };
+                    break;
+                case ModuleType.VIDEO:
+                    content = { videoUrl: '' };
+                    break;
+                case ModuleType.QUIZ:
+                    content = { questions: [] };
+                    break;
+            }
+        }
+
+        return {
+            ...initialData,
+            content
+        };
+    });
     const [questions, setQuestions] = useState<{
         question: string;
         options: string[];
         correctOption: number;
-    }[]>(initialData?.content.questions || []);
+        explanation?: string;
+    }[]>(() => {
+        if (initialData?.type === ModuleType.QUIZ && initialData.content?.questions) {
+            return initialData.content.questions;
+        }
+        return [];
+    });
     const [errors, setErrors] = useState<{[key: string]: string | undefined}>({});
+
+    // Reset form when initialData changes
+    React.useEffect(() => {
+        if (initialData) {
+            let content = {};
+            if (initialData.content) {
+                switch (initialData.type) {
+                    case ModuleType.TEXT:
+                        content = { text: initialData.content.text || '' };
+                        break;
+                    case ModuleType.VIDEO:
+                        content = { videoUrl: initialData.content.videoUrl || '' };
+                        break;
+                    case ModuleType.QUIZ:
+                        content = { questions: initialData.content.questions || [] };
+                        break;
+                }
+            } else {
+                switch (initialData.type) {
+                    case ModuleType.TEXT:
+                        content = { text: '' };
+                        break;
+                    case ModuleType.VIDEO:
+                        content = { videoUrl: '' };
+                        break;
+                    case ModuleType.QUIZ:
+                        content = { questions: [] };
+                        break;
+                }
+            }
+            setFormData({
+                ...initialData,
+                content
+            });
+            if (initialData.type === ModuleType.QUIZ && initialData.content?.questions) {
+                setQuestions(initialData.content.questions);
+            } else {
+                setQuestions([]);
+            }
+        } else {
+            setFormData(defaultData);
+            setQuestions([]);
+        }
+        setErrors({});
+    }, [initialData]);
 
     const handleChange = (field: keyof ModuleFormData, value: any) => {
         setFormData(prev => ({
@@ -104,7 +189,8 @@ export default function ModuleForm({
             {
                 question: '',
                 options: ['', '', '', ''],
-                correctOption: 0
+                correctOption: 0,
+                explanation: ''
             }
         ]);
     };
@@ -164,6 +250,21 @@ export default function ModuleForm({
             case ModuleType.QUIZ:
                 if (!formData.content.questions?.length) {
                     newErrors.content = 'At least one question is required';
+                } else {
+                    formData.content.questions.forEach((q, index) => {
+                        if (!q.question || q.question.trim().length < 3) {
+                            newErrors.content = `Question ${index + 1} must be at least 3 characters`;
+                        }
+                        if (!q.options || q.options.length < 2) {
+                            newErrors.content = `Question ${index + 1} must have at least 2 options`;
+                        }
+                        if (q.options.some(opt => !opt || opt.trim().length === 0)) {
+                            newErrors.content = `All options in question ${index + 1} must be filled`;
+                        }
+                        if (q.explanation && q.explanation.trim().length > 0 && q.explanation.trim().length < 10) {
+                            newErrors.content = `Explanation for question ${index + 1} must be at least 10 characters`;
+                        }
+                    });
                 }
                 break;
         }
@@ -176,7 +277,17 @@ export default function ModuleForm({
         e.preventDefault();
         if (validateForm()) {
             onSubmit(formData);
+            setFormData(defaultData);
+            setQuestions([]);
+            setErrors({});
         }
+    };
+
+    const handleClose = () => {
+        setFormData(defaultData);
+        setQuestions([]);
+        setErrors({});
+        onClose();
     };
 
     const handleTypeChange = (newType: ModuleType) => {
@@ -251,14 +362,26 @@ export default function ModuleForm({
                         )}
                         {questions.map((question, qIndex) => (
                             <Box key={qIndex} sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                                <TextField
-                                    label={`Question ${qIndex + 1}`}
-                                    value={question.question}
-                                    onChange={(e) => handleQuestionChange(qIndex, 'question', e.target.value)}
-                                    fullWidth
-                                    required
-                                    sx={{ mb: 2 }}
-                                />
+                                <>
+                                    <TextField
+                                        label={`Question ${qIndex + 1}`}
+                                        value={question.question}
+                                        onChange={(e) => handleQuestionChange(qIndex, 'question', e.target.value)}
+                                        fullWidth
+                                        required
+                                        sx={{ mb: 2 }}
+                                    />
+                                    <TextField
+                                        label="Explanation (Optional)"
+                                        value={question.explanation || ''}
+                                        onChange={(e) => handleQuestionChange(qIndex, 'explanation', e.target.value)}
+                                        fullWidth
+                                        multiline
+                                        rows={2}
+                                        sx={{ mb: 2 }}
+                                        helperText="Minimum 10 characters if provided"
+                                    />
+                                </>
                                 {question.options.map((option, oIndex) => (
                                     <Box key={oIndex} display="flex" gap={2} mb={1}>
                                         <TextField
@@ -291,8 +414,8 @@ export default function ModuleForm({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <form onSubmit={handleSubmit}>
+        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+            <form onSubmit={handleSubmit} onReset={handleClose}>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogContent>
                     <Box display="flex" flexDirection="column" gap={3} py={2}>
@@ -347,7 +470,7 @@ export default function ModuleForm({
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose}>Cancel</Button>
+                    <Button type="reset">Cancel</Button>
                     <Button type="submit" variant="contained" color="primary">
                         {initialData ? 'Update' : 'Create'} Module
                     </Button>

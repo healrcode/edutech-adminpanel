@@ -217,7 +217,7 @@ export default function CourseDetail() {
                                 }}
                                 onAddChapter={async (data: ChapterFormData) => {
                                     try {
-                                        await courseApi.createChapter(selectedCourse.id, '', data);
+                                        await courseApi.createChapter(selectedCourse.id, data);
                                         loadCourseDetails(selectedCourse.id);
                                     } catch (error) {
                                         console.error('Failed to create chapter:', error);

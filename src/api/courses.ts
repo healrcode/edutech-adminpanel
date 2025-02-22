@@ -117,11 +117,25 @@ export class CoursesApi extends ApiClient {
     }
 
     // Chapter management
-    async getChapters(courseId: string, moduleId: string): Promise<Course> {
+    async getChapters(courseId: string): Promise<Course> {
+        return this.get<Course>(`/courses/admin/${courseId}/chapters`);
+    }
+
+    async createChapter(courseId: string, data: {
+        title: string;
+        description?: string;
+        isOptional: boolean;
+        isFree: boolean;
+    }): Promise<Course> {
+        return this.post<Course>(`/courses/admin/${courseId}/chapters`, data);
+    }
+
+    // Legacy chapter-module methods
+    async getChaptersByModule(courseId: string, moduleId: string): Promise<Course> {
         return this.get<Course>(`/courses/admin/${courseId}/modules/${moduleId}/chapters`);
     }
 
-    async createChapter(courseId: string, moduleId: string, data: {
+    async createChapterInModule(courseId: string, moduleId: string, data: {
         title: string;
         description?: string;
         isOptional: boolean;

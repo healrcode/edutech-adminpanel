@@ -134,8 +134,8 @@ export default function ChaptersTab({
                             >
                                 <ListItemText
                                     primary={
-                                        <Box display="flex" alignItems="center" gap={1}>
-                                            <Typography variant="subtitle1">
+                                        <Typography component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography variant="subtitle1" component="span">
                                                 {chapter.title}
                                             </Typography>
                                             {chapter.isOptional && (
@@ -152,7 +152,7 @@ export default function ChaptersTab({
                                                     color="primary"
                                                 />
                                             )}
-                                        </Box>
+                                        </Typography>
                                     }
                                     secondary={chapter.description}
                                 />
@@ -211,35 +211,35 @@ export default function ChaptersTab({
                                                 }}
                                             >
                                                 <ListItemText
-                                                    primary={
-                                                        <Box display="flex" alignItems="center" gap={1}>
-                                                            <Typography>{module.title}</Typography>
-                                                            <Chip
-                                                                label={module.type}
-                                                                size="small"
-                                                                sx={{
-                                                                    bgcolor: getModuleTypeColor(module.type),
-                                                                    color: 'white'
-                                                                }}
-                                                            />
-                                                            {!module.isRequired && (
-                                                                <Chip
-                                                                    label="Optional"
-                                                                    size="small"
-                                                                    variant="outlined"
-                                                                />
-                                                            )}
-                                                        </Box>
-                                                    }
+                                    primary={
+                                        <Typography component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography component="span">{module.title}</Typography>
+                                            <Chip
+                                                label={module.type}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: getModuleTypeColor(module.type),
+                                                    color: 'white'
+                                                }}
+                                            />
+                                            {!module.isRequired && (
+                                                <Chip
+                                                    label="Optional"
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
+                                            )}
+                                        </Typography>
+                                    }
                                                     secondary={
-                                                        <Box>
+                                                        <Typography component="div">
                                                             {module.description}
                                                             {module.duration && (
                                                                 <Typography variant="caption" display="block">
                                                                     Duration: {module.duration} minutes
                                                                 </Typography>
                                                             )}
-                                                        </Box>
+                                                        </Typography>
                                                     }
                                                 />
                                                 <Box>

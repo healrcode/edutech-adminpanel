@@ -52,7 +52,7 @@ export class CoursesApi extends ApiClient {
 
     // Update course
     async updateCourse(id: string, data: UpdateCourseInput): Promise<Course> {
-        return this.put<Course>(`/courses/admin/${id}`, data);
+        return this.put<Course>(`/courses/admin/courses/${id}`, data);
     }
 
     // Delete course

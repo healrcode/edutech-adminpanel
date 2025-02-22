@@ -64,9 +64,9 @@ interface ChaptersTabProps {
     onAddChapter: (data: ChapterFormData) => void;
     onEditChapter: (chapter: Chapter) => void;
     onDeleteChapter: (chapterId: string) => void;
-    onAddModule: (moduleId: string, data: ModuleFormData) => void;
-    onEditModule: (moduleId: string, data: ModuleFormData) => void;
-    onDeleteModule: (moduleId: string) => void;
+    onAddModule: (chapterId: string, data: ModuleFormData) => void;
+    onEditModule: (moduleId: string, data: ModuleFormData, chapterId: string) => void;
+    onDeleteModule: (moduleId: string, chapterId: string) => void;
 }
 
 export default function ChaptersTab({
@@ -246,16 +246,16 @@ export default function ChaptersTab({
                                                     <IconButton
                                                         size="small"
                                                         onClick={() => {
-                                                            setSelectedModule(module);
-                                                            setSelectedChapterId(chapter.id);
-                                                            setModuleFormOpen(true);
-                                                        }}
-                                                    >
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => onDeleteModule(module.id)}
+                                            setSelectedModule(module);
+                                            setSelectedChapterId(chapter.id);
+                                            setModuleFormOpen(true);
+                                        }}
+                                    >
+                                        <EditIcon />
+                                    </IconButton>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => onDeleteModule(module.id, chapter.id)}
                                                     >
                                                         <DeleteIcon />
                                                     </IconButton>
@@ -323,7 +323,7 @@ export default function ChaptersTab({
                 }}
                 onSubmit={(data) => {
                     if (selectedModule && selectedChapterId) {
-                        onEditModule(selectedModule.id, data);
+                        onEditModule(selectedModule.id, data, selectedChapterId);
                     } else if (selectedChapterId) {
                         onAddModule(selectedChapterId, data);
                     }

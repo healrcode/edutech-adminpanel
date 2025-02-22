@@ -82,11 +82,11 @@ export class CoursesApi extends ApiClient {
     }
 
     // Module management
-    async getModules(courseId: string): Promise<Course> {
-        return this.get<Course>(`/courses/admin/${courseId}/modules`);
+    async getModulesByChapter(courseId: string, chapterId: string): Promise<Course> {
+        return this.get<Course>(`/courses/admin/${courseId}/chapters/${chapterId}/modules`);
     }
 
-    async createModule(courseId: string, moduleId: string, data: {
+    async createModule(courseId: string, chapterId: string, data: {
         title: string;
         description?: string;
         type: ModuleType;
@@ -94,10 +94,10 @@ export class CoursesApi extends ApiClient {
         duration?: number;
         isRequired: boolean;
     }): Promise<Course> {
-        return this.post<Course>(`/courses/admin/${courseId}/modules/${moduleId}`, data);
+        return this.post<Course>(`/courses/admin/${courseId}/chapters/${chapterId}/modules`, data);
     }
 
-    async updateModule(courseId: string, moduleId: string, data: {
+    async updateModule(courseId: string, chapterId: string, moduleId: string, data: {
         title?: string;
         description?: string;
         type?: ModuleType;
@@ -105,15 +105,15 @@ export class CoursesApi extends ApiClient {
         duration?: number;
         isRequired?: boolean;
     }): Promise<Course> {
-        return this.put<Course>(`/courses/admin/${courseId}/modules/${moduleId}`, data);
+        return this.put<Course>(`/courses/admin/${courseId}/chapters/${chapterId}/modules/${moduleId}`, data);
     }
 
-    async deleteModule(courseId: string, moduleId: string): Promise<void> {
-        return this.delete<void>(`/courses/admin/${courseId}/modules/${moduleId}`);
+    async deleteModule(courseId: string, chapterId: string, moduleId: string): Promise<void> {
+        return this.delete<void>(`/courses/admin/${courseId}/chapters/${chapterId}/modules/${moduleId}`);
     }
 
-    async reorderModules(courseId: string, moduleIds: string[]): Promise<Course> {
-        return this.put<Course>(`/courses/admin/${courseId}/modules/order`, { moduleIds });
+    async reorderModules(courseId: string, chapterId: string, moduleIds: string[]): Promise<Course> {
+        return this.put<Course>(`/courses/admin/${courseId}/chapters/${chapterId}/modules/order`, { moduleIds });
     }
 
     // Chapter management

@@ -46,7 +46,9 @@ const defaultData: ModuleFormData = {
     title: '',
     description: '',
     type: ModuleType.TEXT,
-    content: {},
+    content: {
+        text: ''  // Initialize with empty text for TEXT type
+    },
     isRequired: true,
 };
 
@@ -65,12 +67,19 @@ export default function ModuleForm({
         options: string[];
         correctOption: number;
     }[]>(initialData?.content.questions || []);
+    const [errors, setErrors] = useState<{[key: string]: string | undefined}>({});
 
     const handleChange = (field: keyof ModuleFormData, value: any) => {
         setFormData(prev => ({
             ...prev,
             [field]: value
         }));
+        // Clear error for the field being changed
+        setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[field];
+            return newErrors;
+        });
     };
 
     const handleContentChange = (value: any) => {
@@ -81,6 +90,12 @@ export default function ModuleForm({
                 ...value
             }
         }));
+        // Clear content error
+        setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors.content;
+            return newErrors;
+        });
     };
 
     const handleAddQuestion = () => {
@@ -115,9 +130,76 @@ export default function ModuleForm({
         });
     };
 
+    const validateForm = (): boolean => {
+        const newErrors: {[key: string]: string} = {};
+
+        // Title validation
+        if (formData.title.length < 3) {
+            newErrors.title = 'Title must be at least 3 characters long';
+        }
+
+        // Description validation
+        if (formData.description && formData.description.length < 10) {
+            newErrors.description = 'Description must be at least 10 characters long';
+        }
+
+        // Content validation based on type
+        switch (formData.type) {
+            case ModuleType.TEXT:
+                if (!formData.content.text || formData.content.text.length < 10) {
+                    newErrors.content = 'Content must be at least 10 characters long';
+                }
+                break;
+            case ModuleType.VIDEO:
+                if (!formData.content.videoUrl) {
+                    newErrors.content = 'Video URL is required';
+                } else {
+                    try {
+                        new URL(formData.content.videoUrl);
+                    } catch {
+                        newErrors.content = 'Please enter a valid URL';
+                    }
+                }
+                break;
+            case ModuleType.QUIZ:
+                if (!formData.content.questions?.length) {
+                    newErrors.content = 'At least one question is required';
+                }
+                break;
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+        if (validateForm()) {
+            onSubmit(formData);
+        }
+    };
+
+    const handleTypeChange = (newType: ModuleType) => {
+        // Initialize appropriate content structure based on type
+        let newContent = {};
+        switch (newType) {
+            case ModuleType.TEXT:
+                newContent = { text: '' };
+                break;
+            case ModuleType.VIDEO:
+                newContent = { videoUrl: '' };
+                break;
+            case ModuleType.QUIZ:
+                newContent = { questions: [] };
+                break;
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            type: newType,
+            content: newContent
+        }));
+        setErrors({});  // Clear errors on type change
     };
 
     const renderContentFields = () => {
@@ -131,6 +213,8 @@ export default function ModuleForm({
                             onChange={(e) => handleContentChange({ videoUrl: e.target.value })}
                             required
                             fullWidth
+                            error={!!errors.content}
+                            helperText={errors.content}
                         />
                         <TextField
                             label="Duration (minutes)"
@@ -152,12 +236,19 @@ export default function ModuleForm({
                         rows={6}
                         required
                         fullWidth
+                        error={!!errors.content}
+                        helperText={errors.content || 'Minimum 10 characters'}
                     />
                 );
 
             case ModuleType.QUIZ:
                 return (
                     <Box>
+                        {errors.content && (
+                            <Typography color="error" sx={{ mb: 2 }}>
+                                {errors.content}
+                            </Typography>
+                        )}
                         {questions.map((question, qIndex) => (
                             <Box key={qIndex} sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                                 <TextField
@@ -211,6 +302,8 @@ export default function ModuleForm({
                             onChange={(e) => handleChange('title', e.target.value)}
                             required
                             fullWidth
+                            error={!!errors.title}
+                            helperText={errors.title || 'Minimum 3 characters'}
                         />
 
                         <TextField
@@ -220,6 +313,8 @@ export default function ModuleForm({
                             multiline
                             rows={2}
                             fullWidth
+                            error={!!errors.description}
+                            helperText={errors.description || 'Minimum 10 characters'}
                         />
 
                         <FormControl fullWidth>
@@ -227,7 +322,7 @@ export default function ModuleForm({
                             <Select
                                 value={formData.type}
                                 label="Module Type"
-                                onChange={(e) => handleChange('type', e.target.value)}
+                                onChange={(e) => handleTypeChange(e.target.value as ModuleType)}
                                 required
                             >
                                 {Object.values(ModuleType).map((type) => (

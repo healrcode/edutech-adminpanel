@@ -175,9 +175,9 @@ export default function CourseDetail() {
                         <TabPanel value={currentTab} index={1}>
                             <ChaptersTab
                                 chapters={selectedCourse.chapters || []}
-                                onAddModule={async (moduleId: string, data: ModuleFormData) => {
+                                onAddModule={async (chapterId: string, data: ModuleFormData) => {
                                     try {
-                                        await courseApi.createModule(selectedCourse.id, moduleId, {
+                                        await courseApi.createModule(selectedCourse.id, chapterId, {
                                             title: data.title,
                                             description: data.description,
                                             type: data.type,
@@ -190,9 +190,9 @@ export default function CourseDetail() {
                                         console.error('Failed to create module:', error);
                                     }
                                 }}
-                                onEditModule={async (moduleId: string, data: ModuleFormData) => {
+                                onEditModule={async (moduleId: string, data: ModuleFormData, chapterId: string) => {
                                     try {
-                                        await courseApi.updateModule(selectedCourse.id, moduleId, {
+                                        await courseApi.updateModule(selectedCourse.id, chapterId, moduleId, {
                                             title: data.title,
                                             description: data.description,
                                             type: data.type,
@@ -205,10 +205,10 @@ export default function CourseDetail() {
                                         console.error('Failed to update module:', error);
                                     }
                                 }}
-                                onDeleteModule={async (moduleId: string) => {
+                                onDeleteModule={async (moduleId: string, chapterId: string) => {
                                     if (window.confirm('Are you sure you want to delete this module?')) {
                                         try {
-                                            await courseApi.deleteModule(selectedCourse.id, moduleId);
+                                            await courseApi.deleteModule(selectedCourse.id, chapterId, moduleId);
                                             loadCourseDetails(selectedCourse.id);
                                         } catch (error) {
                                             console.error('Failed to delete module:', error);

@@ -225,20 +225,29 @@ export default function Courses() {
                                 <TableCell>
                                     <IconButton
                                         size="small"
-                                        onClick={() => handleEditCourse(course)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEditCourse(course);
+                                        }}
                                     >
                                         <EditIcon />
                                     </IconButton>
                                     <IconButton
                                         size="small"
-                                        onClick={() => handleDeleteCourse(course.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteCourse(course.id);
+                                        }}
                                     >
                                         <DeleteIcon />
                                     </IconButton>
                                     {course.status === Status.DRAFT && (
                                         <Button
                                             size="small"
-                                            onClick={() => handlePublishCourse(course.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePublishCourse(course.id);
+                                            }}
                                         >
                                             Publish
                                         </Button>
@@ -246,7 +255,10 @@ export default function Courses() {
                                     {course.status === Status.PUBLISHED && (
                                         <Button
                                             size="small"
-                                            onClick={() => handleUnpublishCourse(course.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUnpublishCourse(course.id);
+                                            }}
                                         >
                                             Unpublish
                                         </Button>

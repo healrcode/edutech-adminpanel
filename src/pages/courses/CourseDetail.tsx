@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     Box,
     Tab,
@@ -12,11 +12,47 @@ import {
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { courseApi, Course } from '../../api/courses';
+import { ModuleType } from '../../common/enums';
 import CourseInfo from './components/CourseInfo';
 import ChaptersTab from './components/ChaptersTab';
 import SettingsTab from './components/SettingsTab';
-import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
+
+interface Module {
+    id: string;
+    title: string;
+    type: ModuleType;
+    description?: string;
+    duration?: number;
+    position: number;
+    isRequired: boolean;
+}
+
+interface Chapter {
+    id: string;
+    title: string;
+    description?: string;
+    position: number;
+    isOptional: boolean;
+    isFree: boolean;
+    modules: Module[];
+}
+
+interface ModuleFormData {
+    title: string;
+    description?: string;
+    type: ModuleType;
+    content: any;
+    duration?: number;
+    isRequired: boolean;
+}
+
+interface ChapterFormData {
+    title: string;
+    description?: string;
+    isOptional: boolean;
+    isFree: boolean;
+}
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -139,45 +175,9 @@ export default function CourseDetail() {
                         <TabPanel value={currentTab} index={1}>
                             <ChaptersTab
                                 chapters={selectedCourse.chapters || []}
-                                onAddChapter={async (data) => {
+                                onAddModule={async (moduleId: string, data: ModuleFormData) => {
                                     try {
-                                        await courseApi.createChapter(selectedCourse.id, {
-                                            title: data.title,
-                                            description: data.description,
-                                            isOptional: data.isOptional,
-                                            isFree: data.isFree
-                                        });
-                                        loadCourseDetails(selectedCourse.id);
-                                    } catch (error) {
-                                        console.error('Failed to create chapter:', error);
-                                    }
-                                }}
-                                onEditChapter={async (chapter) => {
-                                    try {
-                                        await courseApi.updateChapter(selectedCourse.id, chapter.id, {
-                                            title: chapter.title,
-                                            description: chapter.description,
-                                            isOptional: chapter.isOptional,
-                                            isFree: chapter.isFree
-                                        });
-                                        loadCourseDetails(selectedCourse.id);
-                                    } catch (error) {
-                                        console.error('Failed to update chapter:', error);
-                                    }
-                                }}
-                                onDeleteChapter={async (chapterId) => {
-                                    if (window.confirm('Are you sure you want to delete this chapter?')) {
-                                        try {
-                                            await courseApi.deleteChapter(selectedCourse.id, chapterId);
-                                            loadCourseDetails(selectedCourse.id);
-                                        } catch (error) {
-                                            console.error('Failed to delete chapter:', error);
-                                        }
-                                    }
-                                }}
-                                onAddModule={async (chapterId, data) => {
-                                    try {
-                                        await courseApi.createModule(selectedCourse.id, chapterId, {
+                                        await courseApi.createModule(selectedCourse.id, moduleId, {
                                             title: data.title,
                                             description: data.description,
                                             type: data.type,
@@ -190,9 +190,9 @@ export default function CourseDetail() {
                                         console.error('Failed to create module:', error);
                                     }
                                 }}
-                                onEditModule={async (moduleId, chapterId, data) => {
+                                onEditModule={async (moduleId: string, data: ModuleFormData) => {
                                     try {
-                                        await courseApi.updateModule(selectedCourse.id, chapterId, moduleId, {
+                                        await courseApi.updateModule(selectedCourse.id, moduleId, {
                                             title: data.title,
                                             description: data.description,
                                             type: data.type,
@@ -205,13 +205,44 @@ export default function CourseDetail() {
                                         console.error('Failed to update module:', error);
                                     }
                                 }}
-                                onDeleteModule={async (moduleId, chapterId) => {
+                                onDeleteModule={async (moduleId: string) => {
                                     if (window.confirm('Are you sure you want to delete this module?')) {
                                         try {
-                                            await courseApi.deleteModule(selectedCourse.id, chapterId, moduleId);
+                                            await courseApi.deleteModule(selectedCourse.id, moduleId);
                                             loadCourseDetails(selectedCourse.id);
                                         } catch (error) {
                                             console.error('Failed to delete module:', error);
+                                        }
+                                    }
+                                }}
+                                onAddChapter={async (data: ChapterFormData) => {
+                                    try {
+                                        await courseApi.createChapter(selectedCourse.id, '', data);
+                                        loadCourseDetails(selectedCourse.id);
+                                    } catch (error) {
+                                        console.error('Failed to create chapter:', error);
+                                    }
+                                }}
+                                onEditChapter={async (chapter: Chapter) => {
+                                    try {
+                                        await courseApi.updateChapter(selectedCourse.id, '', chapter.id, {
+                                            title: chapter.title,
+                                            description: chapter.description,
+                                            isOptional: chapter.isOptional,
+                                            isFree: chapter.isFree
+                                        });
+                                        loadCourseDetails(selectedCourse.id);
+                                    } catch (error) {
+                                        console.error('Failed to update chapter:', error);
+                                    }
+                                }}
+                                onDeleteChapter={async (chapterId: string) => {
+                                    if (window.confirm('Are you sure you want to delete this chapter?')) {
+                                        try {
+                                            await courseApi.deleteChapter(selectedCourse.id, '', chapterId);
+                                            loadCourseDetails(selectedCourse.id);
+                                        } catch (error) {
+                                            console.error('Failed to delete chapter:', error);
                                         }
                                     }
                                 }}

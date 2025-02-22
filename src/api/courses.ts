@@ -1,5 +1,5 @@
 import { ApiClient } from './base';
-import { CourseLevel, Status } from '../common/enums';
+import { CourseLevel, Status, ModuleType } from '../common/enums';
 
 export interface Course {
     id: string;
@@ -14,6 +14,23 @@ export interface Course {
     teacherId: string;
     createdAt: string;
     updatedAt: string;
+    chapters: {
+        id: string;
+        title: string;
+        description?: string;
+        position: number;
+        isOptional: boolean;
+        isFree: boolean;
+        modules: {
+            id: string;
+            title: string;
+            type: ModuleType;
+            description?: string;
+            duration?: number;
+            position: number;
+            isRequired: boolean;
+        }[];
+    }[];
 }
 
 export interface CreateCourseInput {
@@ -52,7 +69,7 @@ export class CoursesApi extends ApiClient {
 
     // Update course
     async updateCourse(id: string, data: UpdateCourseInput): Promise<Course> {
-        return this.put<Course>(`/courses/admin/courses/${id}`, data);
+        return this.put<Course>(`/courses/admin/${id}`, data);
     }
 
     // Delete course
@@ -68,6 +85,64 @@ export class CoursesApi extends ApiClient {
     // Unpublish course
     async unpublishCourse(id: string): Promise<Course> {
         return this.post<Course>(`/courses/admin/${id}/unpublish`);
+    }
+
+    // Chapter management
+    async createChapter(courseId: string, data: {
+        title: string;
+        description?: string;
+        isOptional: boolean;
+        isFree: boolean;
+    }): Promise<Course> {
+        return this.post<Course>(`/courses/admin/${courseId}/chapters`, data);
+    }
+
+    async updateChapter(courseId: string, chapterId: string, data: {
+        title?: string;
+        description?: string;
+        isOptional?: boolean;
+        isFree?: boolean;
+    }): Promise<Course> {
+        return this.put<Course>(`/courses/admin/${courseId}/chapters/${chapterId}`, data);
+    }
+
+    async deleteChapter(courseId: string, chapterId: string): Promise<void> {
+        return this.delete<void>(`/courses/admin/${courseId}/chapters/${chapterId}`);
+    }
+
+    async reorderChapters(courseId: string, chapterIds: string[]): Promise<Course> {
+        return this.post<Course>(`/courses/admin/${courseId}/chapters/reorder`, { chapterIds });
+    }
+
+    // Module management
+    async createModule(courseId: string, chapterId: string, data: {
+        title: string;
+        description?: string;
+        type: ModuleType;
+        content: any;
+        duration?: number;
+        isRequired: boolean;
+    }): Promise<Course> {
+        return this.post<Course>(`/courses/admin/${courseId}/chapters/${chapterId}/modules`, data);
+    }
+
+    async updateModule(courseId: string, chapterId: string, moduleId: string, data: {
+        title?: string;
+        description?: string;
+        type?: ModuleType;
+        content?: any;
+        duration?: number;
+        isRequired?: boolean;
+    }): Promise<Course> {
+        return this.put<Course>(`/courses/admin/${courseId}/chapters/${chapterId}/modules/${moduleId}`, data);
+    }
+
+    async deleteModule(courseId: string, chapterId: string, moduleId: string): Promise<void> {
+        return this.delete<void>(`/courses/admin/${courseId}/chapters/${chapterId}/modules/${moduleId}`);
+    }
+
+    async reorderModules(courseId: string, chapterId: string, moduleIds: string[]): Promise<Course> {
+        return this.post<Course>(`/courses/admin/${courseId}/chapters/${chapterId}/modules/reorder`, { moduleIds });
     }
 }
 

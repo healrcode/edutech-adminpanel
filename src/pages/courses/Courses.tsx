@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Button,
@@ -25,6 +26,7 @@ import EditCourseDrawer from './components/EditCourseDrawer';
 import Layout from '../../components/layout/Layout';
 
 export default function Courses() {
+    const navigate = useNavigate();
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
     const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
@@ -200,7 +202,16 @@ export default function Courses() {
                     </TableHead>
                     <TableBody>
                         {courses.map((course) => (
-                            <TableRow key={course.id}>
+                            <TableRow 
+                                key={course.id}
+                                onClick={() => navigate(`/courses/${course.id}`)}
+                                sx={{ 
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                                    }
+                                }}
+                            >
                                 <TableCell>{course.title}</TableCell>
                                 <TableCell>
                                     <LevelBadge level={course.level} />

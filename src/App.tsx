@@ -13,6 +13,7 @@ import Dashboard from './pages/dashboard/Dashboard';
 import Users from './pages/users/Users';
 import EnrollmentsAnalytics from './pages/enrollments/EnrollmentsAnalytics';
 import Courses from './pages/courses/Courses';
+import CourseDetail from './pages/courses/CourseDetail';
 
 // Route Guards
 import PublicRoute from './components/common/PublicRoute';
@@ -89,6 +90,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
                   <Courses />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/courses/:courseId"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                  <CourseDetail />
                 </ProtectedRoute>
               }
             />

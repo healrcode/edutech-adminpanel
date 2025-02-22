@@ -22,3 +22,12 @@ export enum CourseLevel {
     ADVANCED = "ADVANCED",
     EXPERT = "EXPERT"
 }
+
+export enum ModuleType {
+    VIDEO = "VIDEO",
+    TEXT = "TEXT",
+    QUIZ = "QUIZ",
+    ASSIGNMENT = "ASSIGNMENT",
+    RESOURCE = "RESOURCE",
+    INTERACTIVE = "INTERACTIVE"
+}

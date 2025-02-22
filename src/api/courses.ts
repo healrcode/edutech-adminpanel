@@ -1,6 +1,5 @@
-import api from './client';
+import { ApiClient } from './base';
 import { CourseLevel, Status } from '../common/enums';
-import { ApiResponse } from './types';
 
 export interface Course {
     id: string;
@@ -31,45 +30,45 @@ export interface UpdateCourseInput extends Partial<CreateCourseInput> {
     status?: Status;
 }
 
-export const courseApi = {
+export class CoursesApi extends ApiClient {
+    constructor() {
+        super();
+    }
+
     // Get all courses (admin)
-    getAllCourses: async (): Promise<Course[]> => {
-        const response = await api.get<ApiResponse<Course[]>>('/courses/admin');
-        return response.data.data;
-    },
+    async getAllCourses(): Promise<Course[]> {
+        return this.get<Course[]>('/courses/admin');
+    }
 
     // Get course by ID
-    getCourse: async (id: string): Promise<Course> => {
-        const response = await api.get<ApiResponse<Course>>(`/courses/admin/${id}`);
-        return response.data.data;
-    },
+    async getCourse(id: string): Promise<Course> {
+        return this.get<Course>(`/courses/admin/${id}`);
+    }
 
     // Create new course
-    createCourse: async (data: CreateCourseInput): Promise<Course> => {
-        const response = await api.post<ApiResponse<Course>>('/courses/admin', data);
-        return response.data.data;
-    },
+    async createCourse(data: CreateCourseInput): Promise<Course> {
+        return this.post<Course>('/courses/admin', data);
+    }
 
     // Update course
-    updateCourse: async (id: string, data: UpdateCourseInput): Promise<Course> => {
-        const response = await api.put<ApiResponse<Course>>(`/courses/admin/${id}`, data);
-        return response.data.data;
-    },
+    async updateCourse(id: string, data: UpdateCourseInput): Promise<Course> {
+        return this.put<Course>(`/courses/admin/${id}`, data);
+    }
 
     // Delete course
-    deleteCourse: async (id: string): Promise<void> => {
-        await api.delete(`/courses/admin/${id}`);
-    },
+    async deleteCourse(id: string): Promise<void> {
+        return this.delete<void>(`/courses/admin/${id}`);
+    }
 
     // Publish course
-    publishCourse: async (id: string): Promise<Course> => {
-        const response = await api.post<ApiResponse<Course>>(`/courses/admin/${id}/publish`);
-        return response.data.data;
-    },
+    async publishCourse(id: string): Promise<Course> {
+        return this.post<Course>(`/courses/admin/${id}/publish`);
+    }
 
     // Unpublish course
-    unpublishCourse: async (id: string): Promise<Course> => {
-        const response = await api.post<ApiResponse<Course>>(`/courses/admin/${id}/unpublish`);
-        return response.data.data;
+    async unpublishCourse(id: string): Promise<Course> {
+        return this.post<Course>(`/courses/admin/${id}/unpublish`);
     }
-};
+}
+
+export const courseApi = new CoursesApi();

@@ -37,14 +37,45 @@ export default function Courses() {
 
     const loadCourses = async () => {
         try {
+            console.log('Fetching courses...');
             const data = await courseApi.getAllCourses();
-            setCourses(data || []);
+            console.log('Raw courses data:', data);
+            
+            // Validate course data structure
+            if (Array.isArray(data)) {
+                // Log each course's data
+                data.forEach((course, index) => {
+                    console.log(`Course ${index + 1}:`, {
+                        id: course.id,
+                        title: course.title,
+                        level: course.level,
+                        status: course.status,
+                        hasObjectives: Array.isArray(course.objectives),
+                        hasRequirements: Array.isArray(course.requirements),
+                        teacherId: course.teacherId,
+                        duration: course.duration
+                    });
+                });
+                
+                setCourses(data);
+                console.log('Courses state updated with', data.length, 'courses');
+            } else {
+                console.error('Invalid courses data format:', data);
+                setCourses([]);
+            }
         } catch (error) {
             console.error('Failed to load courses:', error);
-            setCourses([]); // Set empty array on error
-            // TODO: Show error snackbar
+            if (error instanceof Error) {
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+            }
+            setCourses([]);
         } finally {
             setLoading(false);
+            console.log('Loading state set to false');
         }
     };
 
@@ -93,7 +124,52 @@ export default function Courses() {
     };
 
     if (loading) {
-        return <div>Loading...</div>; // TODO: Add proper loading component
+        console.log('Rendering loading state');
+        return (
+            <Layout>
+                <Box p={3} display="flex" justifyContent="center">
+                    <Typography>Loading courses...</Typography>
+                </Box>
+            </Layout>
+        );
+    }
+
+    console.log('Rendering courses table. State:', {
+        loading,
+        coursesLength: courses.length,
+        isEmpty: courses.length === 0,
+        firstCourse: courses[0] ? {
+            id: courses[0].id,
+            title: courses[0].title,
+            level: courses[0].level,
+            status: courses[0].status
+        } : null
+    });
+
+    // Add empty state message
+    if (courses.length === 0) {
+        return (
+            <Layout>
+                <Box p={3}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                        <Typography variant="h5">Courses</Typography>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<AddIcon />}
+                            onClick={handleCreateCourse}
+                        >
+                            Create Course
+                        </Button>
+                    </Box>
+                    <Paper sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography color="textSecondary">
+                            No courses found. Click the Create Course button to add one.
+                        </Typography>
+                    </Paper>
+                </Box>
+            </Layout>
+        );
     }
 
     return (
